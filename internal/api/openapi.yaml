@@ -1,0 +1,606 @@
+openapi: 3.0.3
+info:
+  title: Flesh and Blood Cards API
+  description: |
+    REST API for querying Flesh and Blood Trading Card Game data.
+
+    This API provides access to card information, sets, keywords, and format legality data.
+    All data is embedded at build time from the [flesh-and-blood-cards](https://github.com/the-fab-cube/flesh-and-blood-cards) repository.
+  version: 1.0.0
+  contact:
+    name: GitHub Repository
+    url: https://github.com/theocrevon/fab-cards
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Cards
+    description: Card search and retrieval
+  - name: Sets
+    description: Set information
+  - name: Keywords
+    description: Game keyword definitions
+  - name: Abilities
+    description: Card ability types
+  - name: System
+    description: Health and system endpoints
+
+paths:
+  /:
+    get:
+      tags: [System]
+      summary: API Information
+      description: Returns API metadata and list of available endpoints
+      operationId: getIndex
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiInfo'
+
+  /health:
+    get:
+      tags: [System]
+      summary: Health Check
+      description: Returns the health status and data statistics
+      operationId: getHealth
+      responses:
+        '200':
+          description: Health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /cards:
+    get:
+      tags: [Cards]
+      summary: Search Cards
+      description: |
+        Search and filter cards by various criteria. All filters are optional and can be combined.
+        Results are paginated with a default limit of 50 and maximum of 100.
+      operationId: listCards
+      parameters:
+        - name: name
+          in: query
+          description: Filter by card name (partial match, case-insensitive)
+          schema:
+            type: string
+          example: "Enlightened Strike"
+        - name: type
+          in: query
+          description: Filter by card type
+          schema:
+            type: string
+          example: "Attack"
+        - name: class
+          in: query
+          description: Filter by class (Warrior, Ninja, Wizard, etc.)
+          schema:
+            type: string
+            enum: [Generic, Warrior, Brute, Guardian, Ninja, Mechanologist, Ranger, Runeblade, Wizard, Illusionist, Elemental, Light, Shadow, Ice, Lightning, Earth, Mystic, Assassin, Shapeshifter, Bard, Adjudicator, Necromancer, Draconic, Royal]
+          example: "Warrior"
+        - name: set
+          in: query
+          description: Filter by set code
+          schema:
+            type: string
+          example: "WTR"
+        - name: pitch
+          in: query
+          description: Filter by pitch value
+          schema:
+            type: string
+            enum: ["1", "2", "3"]
+          example: "1"
+        - name: keyword
+          in: query
+          description: Filter by keyword (partial match)
+          schema:
+            type: string
+          example: "Go again"
+        - name: q
+          in: query
+          description: Full-text search in card functional text
+          schema:
+            type: string
+          example: "draw a card"
+        - name: legal_in
+          in: query
+          description: Filter by format legality
+          schema:
+            type: string
+            enum: [blitz, cc, commoner, ll, silver_age, upf]
+          example: "blitz"
+        - name: limit
+          in: query
+          description: Maximum number of results (default 50, max 100)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Number of results to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Paginated list of cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCards'
+
+  /cards/{id}:
+    get:
+      tags: [Cards]
+      summary: Get Card
+      description: Retrieve a single card by its unique ID or exact name
+      operationId: getCard
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Card unique_id or exact name
+          schema:
+            type: string
+          example: "QDrWjRHBmBWBnJHmmbzRM"
+      responses:
+        '200':
+          description: Card details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Card'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /cards/{id}/legality:
+    get:
+      tags: [Cards]
+      summary: Get Card Legality
+      description: Get legality information for a card across all formats
+      operationId: getCardLegality
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Card unique_id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Card legality across formats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CardLegality'
+        '404':
+          description: Card not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /sets:
+    get:
+      tags: [Sets]
+      summary: List/Search Sets
+      description: |
+        Retrieve card sets, optionally filtered by name or set code.
+        All filters are optional. If no filters are provided, all sets are returned.
+      operationId: listSets
+      parameters:
+        - name: name
+          in: query
+          description: Filter by set name (partial match, case-insensitive)
+          schema:
+            type: string
+        - name: id
+          in: query
+          description: Filter by set code (partial match, case-insensitive)
+          schema:
+            type: string
+        - name: q
+          in: query
+          description: Search both set name and code (partial match, case-insensitive)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of all sets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Set'
+
+  /sets/{id}:
+    get:
+      tags: [Sets]
+      summary: Get Set
+      description: Retrieve a set by its code, including all cards in the set
+      operationId: getSet
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Set code (e.g., WTR, ARC, MON)
+          schema:
+            type: string
+          example: "WTR"
+      responses:
+        '200':
+          description: Set details with cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetWithCards'
+        '404':
+          description: Set not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /keywords:
+    get:
+      tags: [Keywords]
+      summary: List Keywords
+      description: Retrieve all game keywords with their descriptions
+      operationId: listKeywords
+      responses:
+        '200':
+          description: List of all keywords
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Keyword'
+
+  /keywords/{name}:
+    get:
+      tags: [Keywords]
+      summary: Get Keyword
+      description: Retrieve a keyword by name (case-insensitive)
+      operationId: getKeyword
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Keyword name
+          schema:
+            type: string
+          example: "Go again"
+      responses:
+        '200':
+          description: Keyword details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Keyword'
+        '404':
+          description: Keyword not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /abilities:
+    get:
+      tags: [Abilities]
+      summary: List Abilities
+      description: Retrieve all card ability types
+      operationId: listAbilities
+      responses:
+        '200':
+          description: List of all abilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ability'
+
+components:
+  schemas:
+    ApiInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Flesh and Blood Cards API"
+        version:
+          type: string
+          example: "1.0.0"
+        endpoints:
+          type: object
+          additionalProperties:
+            type: string
+        stats:
+          $ref: '#/components/schemas/Stats'
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+        stats:
+          $ref: '#/components/schemas/Stats'
+
+    Stats:
+      type: object
+      properties:
+        cards:
+          type: integer
+          example: 4241
+        sets:
+          type: integer
+          example: 93
+        keywords:
+          type: integer
+          example: 77
+        abilities:
+          type: integer
+          example: 9
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "not found"
+
+    PaginatedCards:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
+        total:
+          type: integer
+          description: Total number of matching cards
+        limit:
+          type: integer
+          description: Maximum results per page
+        offset:
+          type: integer
+          description: Number of results skipped
+
+    Card:
+      type: object
+      properties:
+        unique_id:
+          type: string
+          description: Unique identifier for the card
+        name:
+          type: string
+          description: Card name
+        color:
+          type: string
+          description: Pitch strip color (Red, Yellow, Blue, or empty)
+          enum: ["", "Red", "Yellow", "Blue"]
+        pitch:
+          type: string
+          description: Pitch value (1, 2, 3, or empty)
+        cost:
+          type: string
+          description: Resource cost to play
+        power:
+          type: string
+          description: Attack power
+        defense:
+          type: string
+          description: Defense value
+        health:
+          type: string
+          description: Health (for heroes)
+        intelligence:
+          type: string
+          description: Intelligence (for heroes)
+        arcane:
+          type: string
+          description: Arcane damage
+        types:
+          type: array
+          items:
+            type: string
+          description: Card types (class, card type, subtypes)
+        traits:
+          type: array
+          items:
+            type: string
+        card_keywords:
+          type: array
+          items:
+            type: string
+          description: Keywords on the card
+        functional_text:
+          type: string
+          description: Card text with markdown formatting
+        functional_text_plain:
+          type: string
+          description: Card text in plain text
+        type_text:
+          type: string
+          description: Full type line text
+        played_horizontally:
+          type: boolean
+        blitz_legal:
+          type: boolean
+        cc_legal:
+          type: boolean
+        commoner_legal:
+          type: boolean
+        ll_legal:
+          type: boolean
+        silver_age_legal:
+          type: boolean
+        blitz_banned:
+          type: boolean
+        cc_banned:
+          type: boolean
+        commoner_banned:
+          type: boolean
+        blitz_suspended:
+          type: boolean
+        cc_suspended:
+          type: boolean
+        printings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Printing'
+
+    Printing:
+      type: object
+      properties:
+        unique_id:
+          type: string
+        id:
+          type: string
+          description: Card ID in the set (e.g., WTR001)
+        set_id:
+          type: string
+          description: Set code
+        edition:
+          type: string
+          description: Edition (N=Normal, F=First, U=Unlimited)
+        foiling:
+          type: string
+          description: Foiling type
+        rarity:
+          type: string
+          description: Rarity code (C, R, M, L, etc.)
+        artists:
+          type: array
+          items:
+            type: string
+        image_url:
+          type: string
+          nullable: true
+          description: URL to card image
+        tcgplayer_url:
+          type: string
+          nullable: true
+          description: TCGPlayer product URL
+
+    CardLegality:
+      type: object
+      properties:
+        card_id:
+          type: string
+        card_name:
+          type: string
+        legalities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Legality'
+
+    Legality:
+      type: object
+      properties:
+        format:
+          type: string
+          enum: [blitz, cc, commoner, ll, silver_age, upf]
+        legal:
+          type: boolean
+        living_legend:
+          type: boolean
+        banned:
+          type: boolean
+        suspended:
+          type: boolean
+        restricted:
+          type: boolean
+
+    Set:
+      type: object
+      properties:
+        unique_id:
+          type: string
+        id:
+          type: string
+          description: Set code (e.g., WTR)
+        name:
+          type: string
+          description: Full set name
+        printings:
+          type: array
+          items:
+            $ref: '#/components/schemas/SetPrinting'
+
+    SetPrinting:
+      type: object
+      properties:
+        unique_id:
+          type: string
+        edition:
+          type: string
+        start_card_id:
+          type: string
+        end_card_id:
+          type: string
+        initial_release_date:
+          type: string
+          format: date-time
+        out_of_print:
+          type: boolean
+        product_page:
+          type: string
+          nullable: true
+        set_logo:
+          type: string
+          nullable: true
+
+    SetWithCards:
+      allOf:
+        - $ref: '#/components/schemas/Set'
+        - type: object
+          properties:
+            cards:
+              type: array
+              items:
+                $ref: '#/components/schemas/Card'
+
+    Keyword:
+      type: object
+      properties:
+        unique_id:
+          type: string
+        name:
+          type: string
+          description: Keyword name
+        description:
+          type: string
+          description: Keyword description with markdown
+        description_plain:
+          type: string
+          description: Keyword description in plain text
+
+    Ability:
+      type: object
+      properties:
+        unique_id:
+          type: string
+        name:
+          type: string
+          description: Ability type name

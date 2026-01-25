@@ -1,0 +1,218 @@
+[
+    {
+        "unique_id": "MQTLKPtWrbNpRrjjPhzn8",
+        "card_unique_id": "RHnFkKb8FKdFzp9rdzGjF",
+        "status_active": true,
+        "date_announced": "2022-04-25T00:00:00.000Z",
+        "date_in_effect": "2022-05-02T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/scheduled-banned-suspended-announcement/"
+    },
+    {
+        "unique_id": "fPzpnpKpJDp86fzN6GpMr",
+        "card_unique_id": "RWwk8hgBdnRdWfjkrfJHt",
+        "status_active": true,
+        "date_announced": "2022-04-25T00:00:00.000Z",
+        "date_in_effect": "2022-05-02T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/scheduled-banned-suspended-announcement/"
+    },
+    {
+        "unique_id": "J6kCKjCtCJn8KtTz6JBkm",
+        "card_unique_id": "TmKrpP8tDg8bmpnqMPtgj",
+        "status_active": true,
+        "date_announced": "2023-05-04T00:00:00.000Z",
+        "date_in_effect": "2023-05-05T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/banned-suspended-may-2023/"
+    },
+    {
+        "unique_id": "ttNzgfRHpT9Gt8nGdpnGQ",
+        "card_unique_id": "Cd6PTGH6CqTHmt7LQmBMp",
+        "status_active": true,
+        "date_announced": "2023-05-04T00:00:00.000Z",
+        "date_in_effect": "2023-05-05T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/banned-suspended-may-2023/"
+    },
+    {
+        "unique_id": "wdhgfnwTbNgBQRGGgJgdN",
+        "card_unique_id": "hw6qHfWdqQGfRPfKJMgR7",
+        "status_active": true,
+        "date_announced": "2023-05-04T00:00:00.000Z",
+        "date_in_effect": "2023-05-05T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/banned-suspended-may-2023/"
+    },
+    {
+        "unique_id": "BBhMgmbTr8Wqf789cgwPL",
+        "card_unique_id": "pCdJMzmgBMD8Mt8qhM7nC",
+        "status_active": true,
+        "date_announced": "2023-05-04T00:00:00.000Z",
+        "date_in_effect": "2023-05-05T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/banned-suspended-may-2023/"
+    },
+    {
+        "unique_id": "fcdzL9DnDNpPjKMTJRRNz",
+        "card_unique_id": "mCCnJrJQkqJ7KfqKNHGnc",
+        "status_active": true,
+        "date_announced": "2023-11-20T00:00:00.000Z",
+        "date_in_effect": "2023-11-24T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/chane-ascends-to-living-to-legend/"
+    },
+    {
+        "unique_id": "FGhMFPQGDQpKmgm9ztjf6",
+        "card_unique_id": "r8Bq8zBCNdzGPkmMcr6QL",
+        "status_active": true,
+        "date_announced": "2023-11-20T00:00:00.000Z",
+        "date_in_effect": "2023-11-24T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/chane-ascends-to-living-to-legend/"
+    },
+    {
+        "unique_id": "wCbhWfR8cwmWTGBjfcjg9",
+        "card_unique_id": "Q9B8TDhTdfDLN8ccnBThK",
+        "status_active": true,
+        "date_announced": "2023-11-27T00:00:00.000Z",
+        "date_in_effect": "2023-12-01T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/living-legends-iyslander-stormbind-kano-and-kassai-cintari-sellsword/"
+    },
+    {
+        "unique_id": "rrDCNwmFmDr6mrjWcQKn7",
+        "card_unique_id": "nzDWrNMqGWgmJfgJhChNb",
+        "status_active": true,
+        "date_announced": "2023-11-27T00:00:00.000Z",
+        "date_in_effect": "2023-12-01T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/living-legends-iyslander-stormbind-kano-and-kassai-cintari-sellsword/"
+    },
+    {
+        "unique_id": "WCFLt7jdNRrL7k8LJ88Lf",
+        "card_unique_id": "wWmP8RJRq7MWk7kBh9q7w",
+        "status_active": true,
+        "date_announced": "2023-11-27T00:00:00.000Z",
+        "date_in_effect": "2023-12-01T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/living-legends-iyslander-stormbind-kano-and-kassai-cintari-sellsword/"
+    },
+    {
+        "unique_id": "nMPBLj9BJdCgdGFGKwFTT",
+        "card_unique_id": "PpwQBBjqmBbgBrKMPbbBr",
+        "status_active": true,
+        "date_announced": "2023-11-27T00:00:00.000Z",
+        "date_in_effect": "2023-12-01T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/living-legends-iyslander-stormbind-kano-and-kassai-cintari-sellsword/"
+    },
+    {
+        "unique_id": "Fmqtb8NNqPgJpTN88rK6F",
+        "card_unique_id": "GCRQMpBtqBHWrk68GqnGP",
+        "status_active": true,
+        "date_announced": "2023-12-05T00:00:00.000Z",
+        "date_in_effect": "2023-12-08T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/living-legend-ira-crimson-haze/"
+    },
+    {
+        "unique_id": "KCmR8rqPwdFFfWnRFz8Gn",
+        "card_unique_id": "FfRMHD8fbLP7FjLJdmbtM",
+        "status_active": true,
+        "date_announced": "2023-12-05T00:00:00.000Z",
+        "date_in_effect": "2023-12-08T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/living-legend-ira-crimson-haze/"
+    },
+    {
+        "unique_id": "jJkPwdTJH67frnn6k9MnD",
+        "card_unique_id": "PpwQBBjqmBbgBrKMPbbBr",
+        "status_active": false,
+        "date_announced": "2023-12-18T00:00:00.000Z",
+        "date_in_effect": "2024-02-02T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/scheduled-banned-and-restricted-announcement-eoy/"
+    },
+    {
+        "unique_id": "hjRp6bbgdpNTwJwKH7jNz",
+        "card_unique_id": "7FHM67fkfjCjzwWzKfFKH",
+        "status_active": true,
+        "date_announced": "2024-09-03T00:00:00.000Z",
+        "date_in_effect": "2024-09-06T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-zen-briar-and-dash/"
+    },
+    {
+        "unique_id": "CJJ6GJWhtpQW67KK8rbKK",
+        "card_unique_id": "M7nPGBJMNj6tbtDgzMNqc",
+        "status_active": true,
+        "date_announced": "2024-09-03T00:00:00.000Z",
+        "date_in_effect": "2024-09-06T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-zen-briar-and-dash/"
+    },
+    {
+        "unique_id": "6Hc7fHmCTTTRBnBbqFczr",
+        "card_unique_id": "7TjkgnbJ8tghfrkMRnTfW",
+        "status_active": true,
+        "date_announced": "2024-09-03T00:00:00.000Z",
+        "date_in_effect": "2024-09-06T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-zen-briar-and-dash/"
+    },
+    {
+        "unique_id": "d8Lr6JDTkbQ6fNBGjGqhn",
+        "card_unique_id": "cbHrfwmLrMjWdhdBtzbff",
+        "status_active": true,
+        "date_announced": "2024-09-03T00:00:00.000Z",
+        "date_in_effect": "2024-09-06T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-zen-briar-and-dash/"
+    },
+    {
+        "unique_id": "Hb9PtHj8zdHnpNBLphhCD",
+        "card_unique_id": "kftPnNkrBLJ7rPmFGgQCm",
+        "status_active": true,
+        "date_announced": "2024-09-03T00:00:00.000Z",
+        "date_in_effect": "2024-09-06T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-zen-briar-and-dash/"
+    },
+    {
+        "unique_id": "8Nh88rjCTqjqPLKKqjN6t",
+        "card_unique_id": "fNFqtdWLq6tCPnnwjLLWL",
+        "status_active": true,
+        "date_announced": "2024-09-03T00:00:00.000Z",
+        "date_in_effect": "2024-09-06T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-zen-briar-and-dash/"
+    },
+    {
+        "unique_id": "87qgc7npDkhmFBpRLtRcj",
+        "card_unique_id": "wNRqrHCn6rrKLhrDkqPwp",
+        "status_active": true,
+        "date_announced": "2024-09-09T00:00:00.000Z",
+        "date_in_effect": "2024-09-13T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-rhinar/"
+    },
+    {
+        "unique_id": "dQqMFNjbb7986GwG7QNTh",
+        "card_unique_id": "QT8JfjzmzqRR9MWgtgPLR",
+        "status_active": true,
+        "date_announced": "2024-09-09T00:00:00.000Z",
+        "date_in_effect": "2024-09-13T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-rhinar/"
+    },
+    {
+        "unique_id": "678gGLB8DDMNpf9cKGnBq",
+        "card_unique_id": "7FHM67fkfjCjzwWzKfFKH",
+        "status_active": false,
+        "date_announced": "2024-11-11T00:00:00.000Z",
+        "date_in_effect": "2024-11-11T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/scheduled-banned-and-restricted-announcement-11-11-24/"
+    },
+    {
+        "unique_id": "LnzBN6rzQtBCnzhGWCqbH",
+        "card_unique_id": "M7nPGBJMNj6tbtDgzMNqc",
+        "status_active": false,
+        "date_announced": "2024-11-11T00:00:00.000Z",
+        "date_in_effect": "2024-11-11T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/scheduled-banned-and-restricted-announcement-11-11-24/"
+    },
+    {
+        "unique_id": "CNHzt88kWhhrMwNFfp9pg",
+        "card_unique_id": "kHmRR6Q7mJPjQgdQJcjpQ",
+        "status_active": true,
+        "date_announced": "2024-12-10T00:00:00.000Z",
+        "date_in_effect": "2024-12-13T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-victor-goldmane/"
+    },
+    {
+        "unique_id": "bBdBDRPPCQFQfhgLFmGMt",
+        "card_unique_id": "RRfwzgrbMbFGNqppnD8rB",
+        "status_active": true,
+        "date_announced": "2024-12-10T00:00:00.000Z",
+        "date_in_effect": "2024-12-13T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/en/articles/living-legend-victor-goldmane/"
+    }
+]

@@ -1,0 +1,79 @@
+name: Check Upstream Data
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force update even if no changes detected"
+        required: false
+        default: "false"
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Check for upstream changes
+        id: check
+        run: |
+          cd data/upstream
+          git fetch origin main
+
+          LOCAL=$(git rev-parse HEAD)
+          REMOTE=$(git rev-parse origin/main)
+
+          echo "local=$LOCAL" >> $GITHUB_OUTPUT
+          echo "remote=$REMOTE" >> $GITHUB_OUTPUT
+
+          if [ "$LOCAL" != "$REMOTE" ] || [ "${{ inputs.force }}" == "true" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update submodule
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          git submodule update --remote data/upstream
+
+      - name: Sync data files
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          ./scripts/sync-data.sh
+
+      - name: Create Pull Request
+        if: steps.check.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update card data from upstream"
+          title: "chore: Update card data from upstream"
+          body: |
+            This PR updates the card data from the upstream repository.
+
+            **Changes:**
+            - Submodule updated from `${{ steps.check.outputs.local }}` to `${{ steps.check.outputs.remote }}`
+            - Data files synced to `internal/data/english/`
+
+            Please review the changes and merge if everything looks correct.
+
+            ---
+            *This PR was automatically created by the check-upstream workflow.*
+          branch: chore/update-upstream-data
+          delete-branch: true
+          labels: |
+            automated
+            data-update
