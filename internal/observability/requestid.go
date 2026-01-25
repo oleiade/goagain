@@ -24,7 +24,11 @@ var requestIDCounter uint32
 // Format: 10 chars timestamp (ms) + 6 chars random/counter
 func GenerateRequestID() string {
 	// Timestamp in milliseconds (base32 encoded)
-	ts := uint64(time.Now().UnixMilli())
+	// Safely convert int64 to uint64 (Unix timestamps are always positive after 1970)
+	var ts uint64
+	if millis := time.Now().UnixMilli(); millis >= 0 {
+		ts = uint64(millis)
+	}
 
 	// Counter + random for uniqueness
 	counter := atomic.AddUint32(&requestIDCounter, 1)
