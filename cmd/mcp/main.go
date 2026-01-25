@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/mark3labs/mcp-go/server"
-	fabmcp "github.com/oleiade/goagain/internal/mcp"
-
 	"github.com/oleiade/goagain/internal/data"
+	fabmcp "github.com/oleiade/goagain/internal/mcp"
+	"github.com/oleiade/goagain/internal/observability"
 )
 
 func main() {
@@ -32,39 +32,55 @@ func main() {
 		_, _ = fmt.Sscanf(envPort, "%d", port)
 	}
 
-	log.Println("Loading card data...")
+	// Initialize observability
+	obsConfig := observability.LoadConfig("goagain-mcp")
+	logger := observability.SetupLogger(obsConfig)
+
+	var metrics *observability.Metrics
+	if obsConfig.MetricsEnabled {
+		metrics = observability.NewMetrics(obsConfig.ServiceName)
+	}
+
+	logger.Info("Loading card data...")
 	store, err := data.NewStore()
 	if err != nil {
-		log.Fatalf("Failed to load data: %v", err)
+		logger.Error("Failed to load data", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	stats := store.Stats()
-	log.Printf("Loaded %d cards, %d sets, %d keywords, %d abilities",
-		stats["cards"], stats["sets"], stats["keywords"], stats["abilities"])
+	observability.LogDataLoaded(logger, stats)
 
-	mcpServer := fabmcp.NewServer(store)
+	// Set data metrics
+	if metrics != nil {
+		metrics.SetDataStats(stats)
+	}
+
+	mcpServer := fabmcp.NewServer(store, logger, metrics)
 
 	switch *mode {
 	case "stdio":
-		runStdio(mcpServer)
+		runStdio(mcpServer, logger)
 	case "http":
-		runHTTP(mcpServer, *port)
+		runHTTP(mcpServer, *port, logger, metrics, obsConfig)
 	default:
-		log.Fatalf("Unknown mode: %s (use 'stdio' or 'http')", *mode)
+		logger.Error("Unknown mode", slog.String("mode", *mode))
+		os.Exit(1)
 	}
 }
 
-func runStdio(mcpServer *fabmcp.Server) {
-	log.Println("Starting MCP server on stdio...")
+func runStdio(mcpServer *fabmcp.Server, logger *slog.Logger) {
+	observability.LogStartup(logger, "mcp-stdio", "stdio")
 	if err := server.ServeStdio(mcpServer.MCPServer()); err != nil {
-		log.Fatalf("Server error: %v", err)
+		logger.Error("Server error", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 }
 
-func runHTTP(mcpServer *fabmcp.Server, port int) {
+func runHTTP(mcpServer *fabmcp.Server, port int, logger *slog.Logger, metrics *observability.Metrics, obsConfig observability.Config) {
 	httpServer := server.NewStreamableHTTPServer(mcpServer.MCPServer())
 
-	// Create a mux to add health endpoint
+	// Create a mux to add health and metrics endpoints
 	mux := http.NewServeMux()
 
 	// Health check endpoint
@@ -75,13 +91,32 @@ func runHTTP(mcpServer *fabmcp.Server, port int) {
 		})
 	})
 
+	// Metrics endpoint
+	if metrics != nil && obsConfig.MetricsEnabled {
+		mux.Handle("GET "+obsConfig.MetricsPath, metrics.Handler())
+	}
+
 	// MCP endpoint (handles /mcp by default)
 	mux.Handle("/", httpServer)
+
+	// Apply middleware
+	var handler http.Handler = mux
+
+	// Metrics middleware for HTTP requests
+	if metrics != nil {
+		handler = metrics.MetricsMiddleware(mcpPathNormalizer())(handler)
+	}
+
+	// Logging middleware
+	handler = observability.LoggingMiddleware(logger, nil)(handler)
+
+	// Request ID middleware
+	handler = observability.RequestIDMiddleware(handler)
 
 	addr := fmt.Sprintf(":%d", port)
 	srv := &http.Server{
 		Addr:         addr,
-		Handler:      mux,
+		Handler:      handler,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second, // Longer for SSE connections
@@ -93,23 +128,38 @@ func runHTTP(mcpServer *fabmcp.Server, port int) {
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("Starting MCP HTTP server on %s", addr)
+		observability.LogStartup(logger, "mcp-http", addr,
+			slog.Bool("metrics_enabled", obsConfig.MetricsEnabled),
+			slog.String("metrics_path", obsConfig.MetricsPath))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			logger.Error("Server error", slog.String("error", err.Error()))
+			os.Exit(1)
 		}
 	}()
 
 	// Wait for shutdown signal
 	<-shutdown
-	log.Println("Shutting down server...")
+	observability.LogShutdown(logger, "mcp-http")
 
 	// Create context with timeout for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
+		logger.Error("Server forced to shutdown", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
-	log.Println("Server stopped")
+	logger.Info("Server stopped")
+}
+
+// mcpPathNormalizer returns a path normalizer for MCP HTTP endpoints.
+func mcpPathNormalizer() func(string) string {
+	return func(path string) string {
+		// Normalize MCP paths - they typically use /mcp for SSE and POST
+		if path == "/mcp" || path == "/mcp/message" {
+			return path
+		}
+		return path
+	}
 }

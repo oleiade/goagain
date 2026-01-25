@@ -5,7 +5,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/oleiade/goagain/internal/api"
 	"github.com/oleiade/goagain/internal/data"
+	"github.com/oleiade/goagain/internal/observability"
 )
 
 func main() {
@@ -25,17 +26,31 @@ func main() {
 		_, _ = fmt.Sscanf(envPort, "%d", port)
 	}
 
-	log.Println("Loading card data...")
+	// Initialize observability
+	obsConfig := observability.LoadConfig("goagain-api")
+	logger := observability.SetupLogger(obsConfig)
+
+	var metrics *observability.Metrics
+	if obsConfig.MetricsEnabled {
+		metrics = observability.NewMetrics(obsConfig.ServiceName)
+	}
+
+	logger.Info("Loading card data...")
 	store, err := data.NewStore()
 	if err != nil {
-		log.Fatalf("Failed to load data: %v", err)
+		logger.Error("Failed to load data", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
 	stats := store.Stats()
-	log.Printf("Loaded %d cards, %d sets, %d keywords, %d abilities",
-		stats["cards"], stats["sets"], stats["keywords"], stats["abilities"])
+	observability.LogDataLoaded(logger, stats)
 
-	router := api.NewRouter(store)
+	// Set data metrics
+	if metrics != nil {
+		metrics.SetDataStats(stats)
+	}
+
+	router := api.NewRouter(store, logger, metrics, obsConfig)
 	addr := fmt.Sprintf(":%d", *port)
 
 	server := &http.Server{
@@ -52,23 +67,27 @@ func main() {
 
 	// Start server in goroutine
 	go func() {
-		log.Printf("Starting API server on %s", addr)
+		observability.LogStartup(logger, "api", addr,
+			slog.Bool("metrics_enabled", obsConfig.MetricsEnabled),
+			slog.String("metrics_path", obsConfig.MetricsPath))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			logger.Error("Server error", slog.String("error", err.Error()))
+			os.Exit(1)
 		}
 	}()
 
 	// Wait for shutdown signal
 	<-shutdown
-	log.Println("Shutting down server...")
+	observability.LogShutdown(logger, "api")
 
 	// Create context with timeout for graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
+		logger.Error("Server forced to shutdown", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
 
-	log.Println("Server stopped")
+	logger.Info("Server stopped")
 }

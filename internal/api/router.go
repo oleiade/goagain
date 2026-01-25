@@ -3,7 +3,7 @@ package api
 import (
 	_ "embed"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/oleiade/goagain/internal/data"
+	"github.com/oleiade/goagain/internal/observability"
 )
 
 //go:embed openapi.yaml
@@ -53,7 +54,7 @@ func LoadConfig() Config {
 			cidr = strings.TrimSpace(cidr)
 			_, ipNet, err := net.ParseCIDR(cidr)
 			if err != nil {
-				log.Printf("Warning: invalid CIDR in TRUSTED_PROXIES: %s", cidr)
+				slog.Warn("Invalid CIDR in TRUSTED_PROXIES", slog.String("cidr", cidr))
 				continue
 			}
 			config.TrustedProxies = append(config.TrustedProxies, ipNet)
@@ -85,7 +86,7 @@ func parseEnvIntValue(s string, out *int) (int, error) {
 }
 
 // NewRouter creates a new HTTP router with all API routes registered.
-func NewRouter(store *data.Store) http.Handler {
+func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Metrics, obsConfig observability.Config) http.Handler {
 	config := LoadConfig()
 
 	mux := http.NewServeMux()
@@ -117,11 +118,31 @@ func NewRouter(store *data.Store) http.Handler {
 	mux.HandleFunc("GET /openapi.yaml", serveOpenAPI)
 	mux.HandleFunc("GET /docs", serveDocs)
 
-	// Apply middleware chain
+	// Metrics endpoint
+	if metrics != nil && obsConfig.MetricsEnabled {
+		mux.Handle("GET "+obsConfig.MetricsPath, metrics.Handler())
+	}
+
+	// Build middleware chain (applied in reverse order)
 	handler := http.Handler(mux)
-	handler = loggingMiddleware(handler, config)
-	handler = rateLimitMiddleware(handler, config)
+
+	// Apply CORS first (innermost)
 	handler = corsMiddleware(handler, config)
+
+	// Rate limiting
+	handler = rateLimitMiddleware(handler, config, metrics)
+
+	// Metrics middleware
+	if metrics != nil {
+		handler = metrics.MetricsMiddleware(observability.PathNormalizer())(handler)
+	}
+
+	// Logging middleware
+	getClientIP := observability.GetClientIPFunc(config.TrustedProxies)
+	handler = observability.LoggingMiddleware(logger, getClientIP)(handler)
+
+	// Request ID middleware (outermost)
+	handler = observability.RequestIDMiddleware(handler)
 
 	return handler
 }
@@ -251,13 +272,16 @@ func (rl *rateLimiter) allow(ip string) bool {
 	return false
 }
 
-func rateLimitMiddleware(next http.Handler, config Config) http.Handler {
+func rateLimitMiddleware(next http.Handler, config Config, metrics *observability.Metrics) http.Handler {
 	limiter := newRateLimiter(config.RateLimitRPS)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := getClientIP(r, config)
 
 		if !limiter.allow(ip) {
+			if metrics != nil {
+				metrics.RecordRateLimitRejection()
+			}
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("Retry-After", "1")
 			w.WriteHeader(http.StatusTooManyRequests)
@@ -268,45 +292,6 @@ func rateLimitMiddleware(next http.Handler, config Config) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
-	})
-}
-
-// responseWriter wraps http.ResponseWriter to capture status code.
-type responseWriter struct {
-	http.ResponseWriter
-	status int
-}
-
-func (rw *responseWriter) WriteHeader(code int) {
-	rw.status = code
-	rw.ResponseWriter.WriteHeader(code)
-}
-
-func loggingMiddleware(next http.Handler, config Config) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-
-		wrapped := &responseWriter{ResponseWriter: w, status: http.StatusOK}
-		next.ServeHTTP(wrapped, r)
-
-		duration := time.Since(start)
-		clientIP := getClientIP(r, config)
-
-		logEntry := map[string]any{
-			"timestamp": start.UTC().Format(time.RFC3339),
-			"method":    r.Method,
-			"path":      r.URL.Path,
-			"status":    wrapped.status,
-			"duration":  duration.String(),
-			"client_ip": clientIP,
-		}
-
-		if r.URL.RawQuery != "" {
-			logEntry["query"] = r.URL.RawQuery
-		}
-
-		logJSON, _ := json.Marshal(logEntry)
-		log.Println(string(logJSON))
 	})
 }
 

@@ -5,24 +5,31 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/oleiade/goagain/internal/data"
 	"github.com/oleiade/goagain/internal/domain"
+	"github.com/oleiade/goagain/internal/observability"
 )
 
 // Server wraps the MCP server with card data access.
 type Server struct {
 	mcpServer *server.MCPServer
 	store     *data.Store
+	logger    *slog.Logger
+	metrics   *observability.Metrics
 }
 
 // NewServer creates a new MCP server with all tools registered.
-func NewServer(store *data.Store) *Server {
+func NewServer(store *data.Store, logger *slog.Logger, metrics *observability.Metrics) *Server {
 	s := &Server{
-		store: store,
+		store:   store,
+		logger:  logger,
+		metrics: metrics,
 	}
 
 	mcpServer := server.NewMCPServer(
@@ -51,6 +58,40 @@ func (s *Server) MCPServer() *server.MCPServer {
 	return s.mcpServer
 }
 
+// instrumentTool wraps a tool handler with metrics and logging.
+func (s *Server) instrumentTool(toolName string, handler func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		start := time.Now()
+
+		if s.metrics != nil {
+			s.metrics.ToolInFlightInc(toolName)
+			defer s.metrics.ToolInFlightDec(toolName)
+		}
+
+		result, err := handler(ctx, request)
+
+		duration := time.Since(start)
+
+		// Determine result count (if applicable)
+		resultCount := 0
+		if result != nil && !result.IsError {
+			resultCount = 1 // Default to 1 for single results
+		}
+
+		// Record metrics
+		if s.metrics != nil {
+			s.metrics.RecordToolInvocation(toolName, duration, resultCount, err)
+		}
+
+		// Log the invocation
+		if s.logger != nil {
+			observability.LogToolInvocation(ctx, s.logger, toolName, duration, resultCount, err)
+		}
+
+		return result, err
+	}
+}
+
 func (s *Server) registerSearchCards(mcpServer *server.MCPServer) {
 	tool := mcp.NewTool("search_cards",
 		mcp.WithDescription("Search for Flesh and Blood cards by name, type, class, keywords, or other attributes"),
@@ -63,7 +104,7 @@ func (s *Server) registerSearchCards(mcpServer *server.MCPServer) {
 		mcp.WithNumber("limit", mcp.Description("Maximum number of results (default 20, max 50)")),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := request.Params.Arguments
 
 		filter := data.CardFilter{
@@ -92,7 +133,9 @@ func (s *Server) registerSearchCards(mcpServer *server.MCPServer) {
 			"count":   len(results),
 			"results": results,
 		})), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("search_cards", handler))
 }
 
 func (s *Server) registerGetCard(mcpServer *server.MCPServer) {
@@ -101,7 +144,7 @@ func (s *Server) registerGetCard(mcpServer *server.MCPServer) {
 		mcp.WithString("id", mcp.Required(), mcp.Description("The unique_id or exact name of the card")),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id := getStringArg(request.Params.Arguments, "id")
 		if id == "" {
 			return mcp.NewToolResultError("id is required"), nil
@@ -121,7 +164,9 @@ func (s *Server) registerGetCard(mcpServer *server.MCPServer) {
 		}
 
 		return mcp.NewToolResultText(formatJSON(formatCardFull(card))), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("get_card", handler))
 }
 
 func (s *Server) registerListSets(mcpServer *server.MCPServer) {
@@ -129,7 +174,7 @@ func (s *Server) registerListSets(mcpServer *server.MCPServer) {
 		mcp.WithDescription("List all Flesh and Blood card sets"),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		var results []map[string]any
 		for _, set := range s.store.Sets {
 			results = append(results, map[string]any{
@@ -142,7 +187,9 @@ func (s *Server) registerListSets(mcpServer *server.MCPServer) {
 			"count": len(results),
 			"sets":  results,
 		})), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("list_sets", handler))
 }
 
 func (s *Server) registerSearchSets(mcpServer *server.MCPServer) {
@@ -153,7 +200,7 @@ func (s *Server) registerSearchSets(mcpServer *server.MCPServer) {
 		mcp.WithString("q", mcp.Description("Search both name and code")),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := request.Params.Arguments
 
 		filter := data.SetFilter{
@@ -176,7 +223,9 @@ func (s *Server) registerSearchSets(mcpServer *server.MCPServer) {
 			"count": len(results),
 			"sets":  results,
 		})), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("search_sets", handler))
 }
 
 func (s *Server) registerGetSet(mcpServer *server.MCPServer) {
@@ -186,7 +235,7 @@ func (s *Server) registerGetSet(mcpServer *server.MCPServer) {
 		mcp.WithBoolean("include_cards", mcp.Description("Whether to include the list of cards in this set (default false)")),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id := getStringArg(request.Params.Arguments, "id")
 		if id == "" {
 			return mcp.NewToolResultError("id is required"), nil
@@ -214,7 +263,9 @@ func (s *Server) registerGetSet(mcpServer *server.MCPServer) {
 		}
 
 		return mcp.NewToolResultText(formatJSON(result)), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("get_set", handler))
 }
 
 func (s *Server) registerSearchCardText(mcpServer *server.MCPServer) {
@@ -224,7 +275,7 @@ func (s *Server) registerSearchCardText(mcpServer *server.MCPServer) {
 		mcp.WithNumber("limit", mcp.Description("Maximum number of results (default 20, max 50)")),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		query := getStringArg(request.Params.Arguments, "query")
 		if query == "" {
 			return mcp.NewToolResultError("query is required"), nil
@@ -251,7 +302,9 @@ func (s *Server) registerSearchCardText(mcpServer *server.MCPServer) {
 			"count":   len(results),
 			"results": results,
 		})), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("search_card_text", handler))
 }
 
 func (s *Server) registerGetFormatLegality(mcpServer *server.MCPServer) {
@@ -260,7 +313,7 @@ func (s *Server) registerGetFormatLegality(mcpServer *server.MCPServer) {
 		mcp.WithString("id", mcp.Required(), mcp.Description("The unique_id or name of the card")),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		id := getStringArg(request.Params.Arguments, "id")
 		if id == "" {
 			return mcp.NewToolResultError("id is required"), nil
@@ -304,7 +357,9 @@ func (s *Server) registerGetFormatLegality(mcpServer *server.MCPServer) {
 			"card_name":  card.Name,
 			"legalities": legalities,
 		})), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("get_format_legality", handler))
 }
 
 func (s *Server) registerListKeywords(mcpServer *server.MCPServer) {
@@ -312,7 +367,7 @@ func (s *Server) registerListKeywords(mcpServer *server.MCPServer) {
 		mcp.WithDescription("List all game keywords with their explanations"),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		var results []map[string]any
 		for _, kw := range s.store.Keywords {
 			results = append(results, map[string]any{
@@ -325,7 +380,9 @@ func (s *Server) registerListKeywords(mcpServer *server.MCPServer) {
 			"count":    len(results),
 			"keywords": results,
 		})), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("list_keywords", handler))
 }
 
 func (s *Server) registerGetKeyword(mcpServer *server.MCPServer) {
@@ -334,7 +391,7 @@ func (s *Server) registerGetKeyword(mcpServer *server.MCPServer) {
 		mcp.WithString("name", mcp.Required(), mcp.Description("The keyword name (e.g., 'Go again', 'Dominate')")),
 	)
 
-	mcpServer.AddTool(tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		name := getStringArg(request.Params.Arguments, "name")
 		if name == "" {
 			return mcp.NewToolResultError("name is required"), nil
@@ -349,7 +406,9 @@ func (s *Server) registerGetKeyword(mcpServer *server.MCPServer) {
 			"name":        kw.Name,
 			"description": kw.DescriptionPlain,
 		})), nil
-	})
+	}
+
+	mcpServer.AddTool(tool, s.instrumentTool("get_keyword", handler))
 }
 
 // Helper functions
