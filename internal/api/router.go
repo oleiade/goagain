@@ -26,6 +26,8 @@ type Config struct {
 	CORSOrigins    []string
 	RateLimitRPS   int
 	TrustedProxies []*net.IPNet
+	APIBaseURL     string
+	MCPBaseURL     string
 }
 
 // LoadConfig loads configuration from environment variables.
@@ -33,6 +35,8 @@ func LoadConfig() Config {
 	config := Config{
 		CORSOrigins:  []string{"*"},
 		RateLimitRPS: 100,
+		APIBaseURL:   "https://api.goagain.dev",
+		MCPBaseURL:   "https://mcp.goagain.dev",
 	}
 
 	if origins := os.Getenv("CORS_ORIGINS"); origins != "" {
@@ -59,6 +63,14 @@ func LoadConfig() Config {
 			}
 			config.TrustedProxies = append(config.TrustedProxies, ipNet)
 		}
+	}
+
+	if apiURL := os.Getenv("API_BASE_URL"); apiURL != "" {
+		config.APIBaseURL = strings.TrimSuffix(apiURL, "/")
+	}
+
+	if mcpURL := os.Getenv("MCP_BASE_URL"); mcpURL != "" {
+		config.MCPBaseURL = strings.TrimSuffix(mcpURL, "/")
 	}
 
 	return config
@@ -90,7 +102,7 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	config := LoadConfig()
 
 	mux := http.NewServeMux()
-	h := NewHandler(store)
+	h := NewHandler(store, config.APIBaseURL, config.MCPBaseURL)
 
 	// Root - API info
 	mux.HandleFunc("GET /", h.Index)

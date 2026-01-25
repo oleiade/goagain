@@ -13,12 +13,18 @@ import (
 
 // Handler holds the dependencies for HTTP handlers.
 type Handler struct {
-	store *data.Store
+	store      *data.Store
+	apiBaseURL string
+	mcpBaseURL string
 }
 
 // NewHandler creates a new Handler with the given data store.
-func NewHandler(store *data.Store) *Handler {
-	return &Handler{store: store}
+func NewHandler(store *data.Store, apiBaseURL, mcpBaseURL string) *Handler {
+	return &Handler{
+		store:      store,
+		apiBaseURL: apiBaseURL,
+		mcpBaseURL: mcpBaseURL,
+	}
 }
 
 // Response types
@@ -103,9 +109,12 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Serve landing page HTML
+	// Serve landing page HTML with configured URLs
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_, _ = w.Write(landingPage)
+	html := string(landingPage)
+	html = strings.ReplaceAll(html, "https://api.goagain.dev", h.apiBaseURL)
+	html = strings.ReplaceAll(html, "https://mcp.goagain.dev", h.mcpBaseURL)
+	_, _ = w.Write([]byte(html))
 }
 
 // Health returns the health status of the API.

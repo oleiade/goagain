@@ -8,7 +8,15 @@ A REST API and MCP (Model Context Protocol) server for [Flesh and Blood](https:/
 - **MCP Server** - Integrate Flesh and Blood card data into AI assistants (Claude, etc.)
 - **Format Legality** - Check card legality across Blitz, Classic Constructed, Commoner, Living Legend, Silver Age, and UPF
 - **Full-Text Search** - Search card abilities and effects
+- **Observability** - Prometheus metrics and structured JSON logging for production deployments
 - **Docker Ready** - Multi-platform container images for easy deployment
+
+## Hosted Service
+
+Public instances are available at:
+
+- **REST API**: https://api.goagain.dev
+- **MCP Server**: https://mcp.goagain.dev
 
 ## Quick Start
 
@@ -54,6 +62,7 @@ docker run -p 8081:8081 -e MCP_MODE=http ghcr.io/oleiade/goagain-mcp
 | `GET /keywords` | List all keywords |
 | `GET /keywords/{name}` | Get keyword description |
 | `GET /abilities` | List all abilities |
+| `GET /metrics` | Prometheus metrics (when enabled) |
 
 ### Card Search Parameters
 
@@ -74,19 +83,19 @@ docker run -p 8081:8081 -e MCP_MODE=http ghcr.io/oleiade/goagain-mcp
 
 ```bash
 # Search for Ninja attack actions
-curl "http://localhost:8080/cards?class=Ninja&type=Attack"
+curl "https://api.goagain.dev/cards?class=Ninja&type=Attack"
 
 # Find cards with "draw" in their text
-curl "http://localhost:8080/cards?q=draw"
+curl "https://api.goagain.dev/cards?q=draw"
 
 # Get a specific card
-curl "http://localhost:8080/cards/WTR001"
+curl "https://api.goagain.dev/cards/WTR001"
 
 # Check format legality
-curl "http://localhost:8080/cards/WTR001/legality"
+curl "https://api.goagain.dev/cards/WTR001/legality"
 
 # List all sets
-curl "http://localhost:8080/sets"
+curl "https://api.goagain.dev/sets"
 ```
 
 ## MCP Server
@@ -111,6 +120,20 @@ The MCP server allows AI assistants to query Flesh and Blood card data. It suppo
 
 Add to your Claude Desktop configuration (`claude_desktop_config.json`):
 
+**Using the hosted service:**
+
+```json
+{
+  "mcpServers": {
+    "fab-cards": {
+      "url": "https://mcp.goagain.dev/mcp"
+    }
+  }
+}
+```
+
+**Using a local binary:**
+
 ```json
 {
   "mcpServers": {
@@ -121,13 +144,13 @@ Add to your Claude Desktop configuration (`claude_desktop_config.json`):
 }
 ```
 
-Or using HTTP mode:
+**Using local HTTP mode:**
 
 ```json
 {
   "mcpServers": {
     "fab-cards": {
-      "url": "http://localhost:8081"
+      "url": "http://localhost:8081/mcp"
     }
   }
 }
@@ -135,7 +158,9 @@ Or using HTTP mode:
 
 ## Configuration
 
-Configuration is via environment variables:
+All configuration is via environment variables. See `.env.example` for a complete template.
+
+### API Server
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -143,14 +168,85 @@ Configuration is via environment variables:
 | `CORS_ORIGINS` | `*` | Comma-separated allowed origins |
 | `RATE_LIMIT_RPS` | `100` | Rate limit (requests per second per IP) |
 | `TRUSTED_PROXIES` | | Comma-separated CIDR blocks for proxy header trust |
+| `API_BASE_URL` | `https://api.goagain.dev` | Base URL shown in landing page and docs |
+| `MCP_BASE_URL` | `https://mcp.goagain.dev` | MCP URL shown in landing page |
+
+### MCP Server
+
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `MCP_MODE` | `stdio` | MCP transport: `stdio` or `http` |
 | `MCP_PORT` | `8081` | MCP HTTP server port |
+
+### Observability
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
+| `LOG_FORMAT` | `json` | Log format: `json` or `text` |
+| `SERVICE_NAME` | `goagain-api` / `goagain-mcp` | Service name for metrics and logs |
+| `METRICS_ENABLED` | `true` | Enable Prometheus metrics endpoint |
+| `METRICS_PATH` | `/metrics` | Path for metrics endpoint |
+
+## Observability
+
+Both servers include built-in observability features for production deployments.
+
+### Prometheus Metrics
+
+When enabled, metrics are exposed at `/metrics` (configurable via `METRICS_PATH`).
+
+**HTTP Metrics:**
+- `http_requests_total{method,path,status_code}` - Total HTTP requests
+- `http_request_duration_seconds{method,path,status_code}` - Request latency histogram
+- `http_requests_in_flight` - Current in-flight requests
+- `http_response_size_bytes{method,path,status_code}` - Response size histogram
+- `http_rate_limit_rejections_total` - Rate limit rejections (API only)
+
+**MCP Tool Metrics:**
+- `mcp_tool_invocations_total{tool_name,status}` - Tool invocation count
+- `mcp_tool_duration_seconds{tool_name,status}` - Tool execution latency
+- `mcp_tool_result_count{tool_name}` - Results returned per invocation
+- `mcp_tool_in_flight{tool_name}` - In-flight tool invocations
+
+**Application Metrics:**
+- `goagain_data_cards_total` - Total cards loaded
+- `goagain_data_sets_total` - Total sets loaded
+- `goagain_data_keywords_total` - Total keywords loaded
+- `goagain_data_abilities_total` - Total abilities loaded
+
+Plus standard Go runtime metrics (`go_*`, `process_*`).
+
+### Structured Logging
+
+Logs are output to stdout in structured JSON format (configurable to text):
+
+```json
+{
+  "time": "2025-01-25T14:30:00.123Z",
+  "level": "INFO",
+  "msg": "HTTP request completed",
+  "service": "goagain-api",
+  "request_id": "01HQXYZ123ABC",
+  "method": "GET",
+  "path": "/cards",
+  "status": 200,
+  "duration_ms": 12.5,
+  "client_ip": "192.168.1.100"
+}
+```
+
+### Grafana Cloud Integration
+
+For Grafana Cloud, configure [Grafana Alloy](https://grafana.com/docs/alloy/) to:
+1. Scrape the `/metrics` endpoint for Prometheus metrics
+2. Collect stdout logs for structured logging
 
 ## Development
 
 ### Prerequisites
 
-- Go 1.23+
+- Go 1.25+
 - [golangci-lint](https://golangci-lint.run/) (for linting)
 - [k6](https://k6.io/) (for load testing, optional)
 
