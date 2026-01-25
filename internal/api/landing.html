@@ -23,6 +23,38 @@
     code {
       font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
     }
+    .code-block {
+      position: relative;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .code-block:hover .copy-btn,
+    .code-block:focus-within .copy-btn {
+      opacity: 1;
+    }
+    .copy-btn.copied {
+      opacity: 1;
+    }
+    details summary {
+      cursor: pointer;
+    }
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+    details summary::before {
+      content: '▶';
+      display: inline-block;
+      margin-right: 0.5rem;
+      transition: transform 0.2s;
+    }
+    details[open] summary::before {
+      transform: rotate(90deg);
+    }
   </style>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen">
@@ -112,13 +144,28 @@
       <h2 class="text-3xl font-bold text-center mb-12">Quick Start</h2>
 
       <div class="space-y-8">
+        <!-- Docker Quick Start -->
+        <div>
+          <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+            <span class="bg-cyan-600 text-xs px-2 py-1 rounded">Docker</span>
+            Run locally
+          </h3>
+          <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
+            <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
+            <code class="text-sm text-gray-300">
+              <span class="text-green-400">docker</span> run -p 8080:8080 ghcr.io/oleiade/goagain:latest
+            </code>
+          </div>
+        </div>
+
         <!-- REST API Example -->
         <div>
           <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
             <span class="bg-purple-600 text-xs px-2 py-1 rounded">REST API</span>
             Search for cards
           </h3>
-          <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
+          <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
+            <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
             <code class="text-sm text-gray-300">
               <span class="text-green-400">curl</span> <span class="text-yellow-300">"https://api.goagain.dev/cards?name=Strike&class=Warrior&limit=5"</span>
             </code>
@@ -131,7 +178,8 @@
             <span class="bg-purple-600 text-xs px-2 py-1 rounded">REST API</span>
             Get card details
           </h3>
-          <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
+          <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
+            <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
             <code class="text-sm text-gray-300">
               <span class="text-green-400">curl</span> <span class="text-yellow-300">"https://api.goagain.dev/cards/enlightened-strike-red"</span>
             </code>
@@ -144,11 +192,12 @@
             <span class="bg-blue-600 text-xs px-2 py-1 rounded">MCP</span>
             Add to Claude Desktop
           </h3>
-          <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
+          <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
+            <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
             <pre class="text-sm text-gray-300"><code>{
   "mcpServers": {
     "flesh-and-blood": {
-      "url": "https://mcp.goagain.dev/mcp"
+      "url": "https://mcp.goagain.dev/"
     }
   }
 }</code></pre>
@@ -174,7 +223,7 @@
           <tbody class="divide-y divide-gray-800">
             <tr>
               <td class="py-3 px-4"><code class="text-purple-400">GET /cards</code></td>
-              <td class="py-3 px-4 text-gray-400">Search cards with filters (name, type, class, set, pitch, keyword)</td>
+              <td class="py-3 px-4 text-gray-400">Search cards with filters (name, type, class, set, pitch, keyword, q, legal_in)</td>
             </tr>
             <tr>
               <td class="py-3 px-4"><code class="text-purple-400">GET /cards/{id}</code></td>
@@ -197,6 +246,18 @@
               <td class="py-3 px-4 text-gray-400">List all game keywords</td>
             </tr>
             <tr>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /keywords/{name}</code></td>
+              <td class="py-3 px-4 text-gray-400">Get keyword description</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /abilities</code></td>
+              <td class="py-3 px-4 text-gray-400">List all card abilities</td>
+            </tr>
+            <tr>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /openapi</code></td>
+              <td class="py-3 px-4 text-gray-400">OpenAPI specification (JSON)</td>
+            </tr>
+            <tr>
               <td class="py-3 px-4"><code class="text-purple-400">GET /health</code></td>
               <td class="py-3 px-4 text-gray-400">Health check with data statistics</td>
             </tr>
@@ -209,6 +270,73 @@
           Full API documentation with interactive examples &rarr;
         </a>
       </div>
+    </div>
+  </section>
+
+  <!-- MCP Tools Section -->
+  <section class="py-20 px-6 bg-gray-900/50">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-12">MCP Tools</h2>
+
+      <p class="text-gray-400 text-center mb-8">
+        The MCP server provides 9 tools for AI assistants to query Flesh and Blood card data, search by text, check format legality, and more.
+      </p>
+
+      <details class="card-gradient rounded-xl border border-gray-800">
+        <summary class="p-6 text-lg font-semibold hover:bg-gray-800/50 rounded-xl transition-colors">
+          View all MCP tools
+        </summary>
+        <div class="px-6 pb-6">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="border-b border-gray-700">
+                  <th class="py-3 px-4 text-gray-400 font-medium">Tool</th>
+                  <th class="py-3 px-4 text-gray-400 font-medium">Description</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-700">
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">search_cards</code></td>
+                  <td class="py-3 px-4 text-gray-400">Search cards by name, type, class, keywords, or other attributes</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">get_card</code></td>
+                  <td class="py-3 px-4 text-gray-400">Get full details of a specific card by unique ID or name</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">search_card_text</code></td>
+                  <td class="py-3 px-4 text-gray-400">Search for cards by text in their abilities or effects</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">get_format_legality</code></td>
+                  <td class="py-3 px-4 text-gray-400">Check a card's legality status across all formats</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">list_sets</code></td>
+                  <td class="py-3 px-4 text-gray-400">List all Flesh and Blood card sets</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">search_sets</code></td>
+                  <td class="py-3 px-4 text-gray-400">Search for sets by name or code</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">get_set</code></td>
+                  <td class="py-3 px-4 text-gray-400">Get details of a specific set including its cards</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">list_keywords</code></td>
+                  <td class="py-3 px-4 text-gray-400">List all game keywords with their explanations</td>
+                </tr>
+                <tr>
+                  <td class="py-3 px-4"><code class="text-blue-400">get_keyword</code></td>
+                  <td class="py-3 px-4 text-gray-400">Get the description of a specific keyword</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
     </div>
   </section>
 
@@ -226,5 +354,27 @@
       </div>
     </div>
   </footer>
+
+  <!-- Copy to Clipboard Script -->
+  <script>
+    function copyCode(button) {
+      const codeBlock = button.parentElement;
+      const code = codeBlock.querySelector('code');
+      const text = code.innerText || code.textContent;
+
+      navigator.clipboard.writeText(text.trim()).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.classList.add('copied');
+
+        setTimeout(() => {
+          button.textContent = originalText;
+          button.classList.remove('copied');
+        }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+      });
+    }
+  </script>
 </body>
 </html>
