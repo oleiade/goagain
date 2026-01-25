@@ -10,13 +10,13 @@ jobs:
   go:
     uses: oleiade/ci/.github/workflows/go.yml@main
     with:
-      go-version: "1.23"
+      go-version: "1.25.6"
       submodules: "recursive"
 
   security:
     uses: oleiade/ci/.github/workflows/go-security.yml@main
     with:
-      go-version: "1.23"
+      go-version: "1.25.6"
       submodules: "recursive"
 
   lint:
@@ -30,7 +30,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.23"
+          go-version: "1.25.6"
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
