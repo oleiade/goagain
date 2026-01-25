@@ -187,10 +187,9 @@ func corsMiddleware(next http.Handler, config Config) http.Handler {
 
 // rateLimiter implements a simple token bucket rate limiter per IP.
 type rateLimiter struct {
-	mu       sync.Mutex
-	clients  map[string]*clientBucket
-	rps      int
-	lastSeen time.Time
+	mu      sync.Mutex
+	clients map[string]*clientBucket
+	rps     int
 }
 
 type clientBucket struct {
