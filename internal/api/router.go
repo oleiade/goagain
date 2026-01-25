@@ -128,6 +128,7 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 
 	// OpenAPI spec
 	mux.HandleFunc("GET /openapi.yaml", serveOpenAPI)
+	mux.HandleFunc("GET /openapi", serveOpenAPI)
 	mux.HandleFunc("GET /docs", serveDocs)
 
 	// Metrics endpoint
