@@ -121,7 +121,7 @@ func (s *Server) registerSearchCards(mcpServer *server.MCPServer) {
 			filter.Limit = 50
 		}
 
-		cards := s.store.SearchCards(filter)
+		cards, _ := s.store.SearchCards(filter)
 
 		// Format results for display
 		var results []map[string]any
@@ -290,7 +290,7 @@ func (s *Server) registerSearchCardText(mcpServer *server.MCPServer) {
 			filter.Limit = 50
 		}
 
-		cards := s.store.SearchCards(filter)
+		cards, _ := s.store.SearchCards(filter)
 
 		var results []map[string]any
 		for _, card := range cards {

@@ -86,6 +86,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	// Check if client wants JSON
 	accept := r.Header.Get("Accept")
 	if strings.Contains(accept, "application/json") {
+		dataStats, _ := h.store.Stats()
 		info := map[string]any{
 			"name":    "goagain - Flesh and Blood Cards API",
 			"version": "1.0.0",
@@ -103,7 +104,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 				"GET /keywords/{name}":     "Get keyword description",
 				"GET /abilities":           "List all abilities",
 			},
-			"stats": h.store.Stats(),
+			"stats": dataStats,
 		}
 		writeJSON(w, http.StatusOK, info)
 		return
@@ -119,9 +120,10 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 
 // Health returns the health status of the API.
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
+	dataStats, _ := h.store.Stats()
 	writeJSON(w, http.StatusOK, HealthResponse{
 		Status: "ok",
-		Stats:  h.store.Stats(),
+		Stats:  dataStats,
 	})
 }
 
@@ -151,13 +153,11 @@ func (h *Handler) ListCards(w http.ResponseWriter, r *http.Request) {
 		filter.Limit = 100
 	}
 
-	cards := h.store.SearchCards(filter)
-
-	// Get total count (without pagination) for response
-	filterNoLimit := filter
-	filterNoLimit.Limit = 0
-	filterNoLimit.Offset = 0
-	total := len(h.store.SearchCards(filterNoLimit))
+	cards, total := h.store.SearchCards(filter)
+	if cards == nil {
+		// Ensure we send back an empty array instead of null
+		cards = make([]*domain.Card, 0)
+	}
 
 	writeJSON(w, http.StatusOK, PaginatedResponse{
 		Data:   cards,

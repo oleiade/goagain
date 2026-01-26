@@ -7,12 +7,14 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/oleiade/goagain/internal/data"
 	"github.com/oleiade/goagain/internal/observability"
+	"golang.org/x/time/rate"
 )
 
 //go:embed openapi.yaml
@@ -47,8 +49,7 @@ func LoadConfig() Config {
 	}
 
 	if rps := os.Getenv("RATE_LIMIT_RPS"); rps != "" {
-		var rate int
-		if _, err := parseEnvInt(rps, &rate); err == nil && rate > 0 {
+		if rate, err := strconv.Atoi(rps); err == nil && rate > 0 {
 			config.RateLimitRPS = rate
 		}
 	}
@@ -74,27 +75,6 @@ func LoadConfig() Config {
 	}
 
 	return config
-}
-
-func parseEnvInt(s string, out *int) (int, error) {
-	var v int
-	_, err := parseEnvIntValue(s, &v)
-	if err == nil {
-		*out = v
-	}
-	return v, err
-}
-
-func parseEnvIntValue(s string, out *int) (int, error) {
-	n := 0
-	for _, c := range s {
-		if c < '0' || c > '9' {
-			return 0, nil
-		}
-		n = n*10 + int(c-'0')
-	}
-	*out = n
-	return n, nil
 }
 
 // NewRouter creates a new HTTP router with all API routes registered.
@@ -219,79 +199,43 @@ func corsMiddleware(next http.Handler, config Config) http.Handler {
 	})
 }
 
-// rateLimiter implements a simple token bucket rate limiter per IP.
-type rateLimiter struct {
-	mu      sync.Mutex
-	clients map[string]*clientBucket
-	rps     int
-}
-
-type clientBucket struct {
-	tokens   float64
-	lastSeen time.Time
-}
-
-func newRateLimiter(rps int) *rateLimiter {
-	rl := &rateLimiter{
-		clients: make(map[string]*clientBucket),
-		rps:     rps,
-	}
-	go rl.cleanup()
-	return rl
-}
-
-func (rl *rateLimiter) cleanup() {
-	ticker := time.NewTicker(time.Minute)
-	for range ticker.C {
-		rl.mu.Lock()
-		now := time.Now()
-		for ip, bucket := range rl.clients {
-			if now.Sub(bucket.lastSeen) > 5*time.Minute {
-				delete(rl.clients, ip)
-			}
-		}
-		rl.mu.Unlock()
-	}
-}
-
-func (rl *rateLimiter) allow(ip string) bool {
-	rl.mu.Lock()
-	defer rl.mu.Unlock()
-
-	now := time.Now()
-	bucket, exists := rl.clients[ip]
-
-	if !exists {
-		rl.clients[ip] = &clientBucket{
-			tokens:   float64(rl.rps) - 1,
-			lastSeen: now,
-		}
-		return true
-	}
-
-	// Refill tokens based on time elapsed
-	elapsed := now.Sub(bucket.lastSeen).Seconds()
-	bucket.tokens += elapsed * float64(rl.rps)
-	if bucket.tokens > float64(rl.rps) {
-		bucket.tokens = float64(rl.rps)
-	}
-	bucket.lastSeen = now
-
-	if bucket.tokens >= 1 {
-		bucket.tokens--
-		return true
-	}
-
-	return false
-}
-
 func rateLimitMiddleware(next http.Handler, config Config, metrics *observability.Metrics) http.Handler {
-	limiter := newRateLimiter(config.RateLimitRPS)
+	type client struct {
+		limiter  *rate.Limiter
+		lastSeen time.Time
+	}
+
+	var (
+		mu      sync.Mutex
+		clients = make(map[string]*client)
+	)
+
+	// Background goroutine to remove old entries from the clients map.
+	go func() {
+		for {
+			time.Sleep(time.Minute)
+			mu.Lock()
+			for ip, client := range clients {
+				if time.Since(client.lastSeen) > 5*time.Minute {
+					delete(clients, ip)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip := getClientIP(r, config)
 
-		if !limiter.allow(ip) {
+		mu.Lock()
+		if _, found := clients[ip]; !found {
+			clients[ip] = &client{
+				limiter: rate.NewLimiter(rate.Limit(config.RateLimitRPS), config.RateLimitRPS*2),
+			}
+		}
+		clients[ip].lastSeen = time.Now()
+		if !clients[ip].limiter.Allow() {
+			mu.Unlock()
 			if metrics != nil {
 				metrics.RecordRateLimitRejection()
 			}
@@ -303,6 +247,7 @@ func rateLimitMiddleware(next http.Handler, config Config, metrics *observabilit
 			})
 			return
 		}
+		mu.Unlock()
 
 		next.ServeHTTP(w, r)
 	})

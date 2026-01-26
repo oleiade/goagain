@@ -35,6 +35,9 @@ type Metrics struct {
 	DataKeywordsTotal  prometheus.Gauge
 	DataAbilitiesTotal prometheus.Gauge
 
+	// Data indexes
+	DataIndexEntriesTotal *prometheus.GaugeVec
+
 	// Registry for this metrics instance
 	Registry *prometheus.Registry
 }
@@ -183,6 +186,14 @@ func NewMetrics(serviceName string) *Metrics {
 				ConstLabels: prometheus.Labels{"service": serviceName},
 			},
 		),
+		DataIndexEntriesTotal: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name:        "goagain_data_index_entries_total",
+				Help:        "Total number of entries in each data index",
+				ConstLabels: prometheus.Labels{"service": serviceName},
+			},
+			[]string{"index_name"},
+		),
 	}
 
 	// Register all metrics
@@ -202,6 +213,7 @@ func NewMetrics(serviceName string) *Metrics {
 		m.DataSetsTotal,
 		m.DataKeywordsTotal,
 		m.DataAbilitiesTotal,
+		m.DataIndexEntriesTotal,
 	)
 
 	return m
@@ -220,6 +232,13 @@ func (m *Metrics) SetDataStats(stats map[string]int) {
 	}
 	if v, ok := stats["abilities"]; ok {
 		m.DataAbilitiesTotal.Set(float64(v))
+	}
+}
+
+// SetIndexStats sets the application index metrics.
+func (m *Metrics) SetIndexStats(stats map[string]int) {
+	for name, value := range stats {
+		m.DataIndexEntriesTotal.WithLabelValues(name).Set(float64(value))
 	}
 }
 

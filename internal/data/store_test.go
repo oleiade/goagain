@@ -7,32 +7,44 @@ import (
 )
 
 func TestNewStore(t *testing.T) {
-	store, err := NewStore()
+	store, err := NewStore(nil)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
 	}
 
-	stats := store.Stats()
+	dataStats, indexStats := store.Stats()
 
-	if stats["cards"] == 0 {
+	if dataStats["cards"] == 0 {
 		t.Error("Expected cards to be loaded")
 	}
-	if stats["sets"] == 0 {
+	if dataStats["sets"] == 0 {
 		t.Error("Expected sets to be loaded")
 	}
-	if stats["keywords"] == 0 {
+	if dataStats["keywords"] == 0 {
 		t.Error("Expected keywords to be loaded")
 	}
-	if stats["abilities"] == 0 {
+	if dataStats["abilities"] == 0 {
 		t.Error("Expected abilities to be loaded")
 	}
+	if dataStats["types"] == 0 {
+		t.Error("Expected types to be loaded")
+	}
 
-	t.Logf("Loaded: %d cards, %d sets, %d keywords, %d abilities",
-		stats["cards"], stats["sets"], stats["keywords"], stats["abilities"])
+	t.Logf("Loaded data: %d cards, %d sets, %d keywords, %d abilities, %d types",
+		dataStats["cards"], dataStats["sets"], dataStats["keywords"], dataStats["abilities"], dataStats["types"])
+
+	if indexStats["cards_by_id"] == 0 {
+		t.Error("Expected cards_by_id index to be built")
+	}
+	if indexStats["cards_by_class"] == 0 {
+		t.Error("Expected cards_by_class index to be built")
+	}
+	t.Logf("Loaded indexes: %d cards_by_id, %d cards_by_name, %d cards_by_set_id, %d sets_by_id, %d keywords_by_name, %d types_by_name, %d cards_by_class, %d cards_by_type, %d cards_by_keyword",
+		indexStats["cards_by_id"], indexStats["cards_by_name"], indexStats["cards_by_set_id"], indexStats["sets_by_id"], indexStats["keywords_by_name"], indexStats["types_by_name"], indexStats["cards_by_class"], indexStats["cards_by_type"], indexStats["cards_by_keyword"])
 }
 
 func TestGetCardByID(t *testing.T) {
-	store, err := NewStore()
+	store, err := NewStore(nil)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
 	}
@@ -55,7 +67,7 @@ func TestGetCardByID(t *testing.T) {
 }
 
 func TestGetCardsByName(t *testing.T) {
-	store, err := NewStore()
+	store, err := NewStore(nil)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
 	}
@@ -74,88 +86,96 @@ func TestGetCardsByName(t *testing.T) {
 }
 
 func TestSearchCards(t *testing.T) {
-	store, err := NewStore()
+	store, err := NewStore(nil)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
 	}
 
 	tests := []struct {
-		name   string
-		filter CardFilter
-		want   func([]*domain.Card) bool
+		name      string
+		filter    CardFilter
+		want      func(cards []*domain.Card, total int) bool
+		wantTotal int
 	}{
 		{
 			name:   "filter by name",
 			filter: CardFilter{Name: "Strike", Limit: 10},
-			want: func(cards []*domain.Card) bool {
-				return len(cards) > 0 && len(cards) <= 10
+			want: func(cards []*domain.Card, total int) bool {
+				return len(cards) > 0 && len(cards) <= 10 && total > 0
 			},
 		},
 		{
 			name:   "filter by class",
 			filter: CardFilter{Class: "Warrior", Limit: 10},
-			want: func(cards []*domain.Card) bool {
+			want: func(cards []*domain.Card, total int) bool {
 				for _, c := range cards {
 					if c.GetClass() != "Warrior" {
 						return false
 					}
 				}
-				return len(cards) > 0
+				return len(cards) > 0 && total > 0
 			},
 		},
 		{
 			name:   "filter by pitch",
 			filter: CardFilter{Pitch: "1", Limit: 10},
-			want: func(cards []*domain.Card) bool {
+			want: func(cards []*domain.Card, total int) bool {
 				for _, c := range cards {
 					if c.Pitch != "1" {
 						return false
 					}
 				}
-				return len(cards) > 0
+				return len(cards) > 0 && total > 0
 			},
 		},
 		{
 			name:   "filter by text",
 			filter: CardFilter{TextQuery: "go again", Limit: 10},
-			want: func(cards []*domain.Card) bool {
-				return len(cards) > 0
+			want: func(cards []*domain.Card, total int) bool {
+				return len(cards) > 0 && total > 0
 			},
 		},
 		{
 			name:   "filter by format legality",
 			filter: CardFilter{LegalIn: domain.FormatBlitz, Limit: 10},
-			want: func(cards []*domain.Card) bool {
+			want: func(cards []*domain.Card, total int) bool {
 				for _, c := range cards {
 					leg := c.GetLegality(domain.FormatBlitz)
 					if !leg.Legal {
 						return false
 					}
 				}
-				return len(cards) > 0
+				return len(cards) > 0 && total > 0
 			},
 		},
 		{
 			name:   "pagination",
 			filter: CardFilter{Limit: 5, Offset: 0},
-			want: func(cards []*domain.Card) bool {
-				return len(cards) == 5
+			want: func(cards []*domain.Card, total int) bool {
+				return len(cards) == 5 && total > 5
+			},
+		},
+		{
+			name:   "pagination out of bounds",
+			filter: CardFilter{Limit: 5, Offset: 100000},
+			want: func(cards []*domain.Card, total int) bool {
+				return len(cards) == 0 && total > 0
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cards := store.SearchCards(tt.filter)
-			if !tt.want(cards) {
-				t.Errorf("SearchCards(%+v) did not meet expectations, got %d cards", tt.filter, len(cards))
+			cards, total := store.SearchCards(tt.filter)
+			if !tt.want(cards, total) {
+				t.Errorf("SearchCards(%+v) did not meet expectations, got %d cards and total %d", tt.filter, len(cards), total)
 			}
 		})
 	}
 }
 
 func TestGetSetByID(t *testing.T) {
-	store, err := NewStore()
+	store, err := NewStore(nil)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
 	}
@@ -178,7 +198,7 @@ func TestGetSetByID(t *testing.T) {
 }
 
 func TestGetKeywordByName(t *testing.T) {
-	store, err := NewStore()
+	store, err := NewStore(nil)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
 	}
@@ -200,14 +220,14 @@ func TestGetKeywordByName(t *testing.T) {
 }
 
 func TestCardLegality(t *testing.T) {
-	store, err := NewStore()
+	store, err := NewStore(nil)
 	if err != nil {
 		t.Fatalf("NewStore() error = %v", err)
 	}
 
 	// Find a card that's legal in blitz
 	filter := CardFilter{LegalIn: domain.FormatBlitz, Limit: 1}
-	cards := store.SearchCards(filter)
+	cards, _ := store.SearchCards(filter)
 
 	if len(cards) == 0 {
 		t.Skip("No blitz-legal cards found")
