@@ -84,32 +84,24 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	mux := http.NewServeMux()
 	h := NewHandler(store, config.APIBaseURL, config.MCPBaseURL)
 
-	// Root - API info
+	// Root - Landing page / API info (unversioned)
 	mux.HandleFunc("GET /", h.Index)
 
-	// Health check
+	// Operational endpoints (unversioned)
 	mux.HandleFunc("GET /health", h.Health)
-
-	// Cards
-	mux.HandleFunc("GET /cards", h.ListCards)
-	mux.HandleFunc("GET /cards/{id}", h.GetCard)
-	mux.HandleFunc("GET /cards/{id}/legality", h.GetCardLegality)
-
-	// Sets
-	mux.HandleFunc("GET /sets", h.ListSets)
-	mux.HandleFunc("GET /sets/{id}", h.GetSet)
-
-	// Keywords
-	mux.HandleFunc("GET /keywords", h.ListKeywords)
-	mux.HandleFunc("GET /keywords/{name}", h.GetKeyword)
-
-	// Abilities
-	mux.HandleFunc("GET /abilities", h.ListAbilities)
-
-	// OpenAPI spec
 	mux.HandleFunc("GET /openapi.yaml", serveOpenAPI)
 	mux.HandleFunc("GET /openapi", serveOpenAPI)
 	mux.HandleFunc("GET /docs", serveDocs)
+
+	// API v1 endpoints
+	mux.HandleFunc("GET /v1/cards", h.ListCards)
+	mux.HandleFunc("GET /v1/cards/{id}", h.GetCard)
+	mux.HandleFunc("GET /v1/cards/{id}/legality", h.GetCardLegality)
+	mux.HandleFunc("GET /v1/sets", h.ListSets)
+	mux.HandleFunc("GET /v1/sets/{id}", h.GetSet)
+	mux.HandleFunc("GET /v1/keywords", h.ListKeywords)
+	mux.HandleFunc("GET /v1/keywords/{name}", h.GetKeyword)
+	mux.HandleFunc("GET /v1/abilities", h.ListAbilities)
 
 	// Metrics endpoint
 	if metrics != nil && obsConfig.MetricsEnabled {

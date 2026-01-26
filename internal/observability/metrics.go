@@ -353,14 +353,14 @@ func PathNormalizer() func(string) string {
 		pattern *regexp.Regexp
 		replace string
 	}{
-		// /cards/{id} - card unique IDs
-		{regexp.MustCompile(`^/cards/[^/]+$`), "/cards/{id}"},
-		// /cards/{id}/legality
-		{regexp.MustCompile(`^/cards/[^/]+/legality$`), "/cards/{id}/legality"},
-		// /sets/{id}
-		{regexp.MustCompile(`^/sets/[^/]+$`), "/sets/{id}"},
-		// /keywords/{name}
-		{regexp.MustCompile(`^/keywords/[^/]+$`), "/keywords/{name}"},
+		// /v1/cards/{id} - card unique IDs
+		{regexp.MustCompile(`^/v1/cards/[^/]+$`), "/v1/cards/{id}"},
+		// /v1/cards/{id}/legality
+		{regexp.MustCompile(`^/v1/cards/[^/]+/legality$`), "/v1/cards/{id}/legality"},
+		// /v1/sets/{id}
+		{regexp.MustCompile(`^/v1/sets/[^/]+$`), "/v1/sets/{id}"},
+		// /v1/keywords/{name}
+		{regexp.MustCompile(`^/v1/keywords/[^/]+$`), "/v1/keywords/{name}"},
 	}
 
 	return func(path string) string {

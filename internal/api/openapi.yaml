@@ -61,7 +61,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
 
-  /cards:
+  /v1/cards:
     get:
       tags: [Cards]
       summary: Search Cards
@@ -144,7 +144,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedCards'
 
-  /cards/{id}:
+  /v1/cards/{id}:
     get:
       tags: [Cards]
       summary: Get Card
@@ -172,7 +172,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /cards/{id}/legality:
+  /v1/cards/{id}/legality:
     get:
       tags: [Cards]
       summary: Get Card Legality
@@ -199,7 +199,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /sets:
+  /v1/sets:
     get:
       tags: [Sets]
       summary: List/Search Sets
@@ -233,7 +233,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Set'
 
-  /sets/{id}:
+  /v1/sets/{id}:
     get:
       tags: [Sets]
       summary: Get Set
@@ -261,7 +261,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /keywords:
+  /v1/keywords:
     get:
       tags: [Keywords]
       summary: List Keywords
@@ -277,7 +277,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Keyword'
 
-  /keywords/{name}:
+  /v1/keywords/{name}:
     get:
       tags: [Keywords]
       summary: Get Keyword
@@ -305,7 +305,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /abilities:
+  /v1/abilities:
     get:
       tags: [Abilities]
       summary: List Abilities

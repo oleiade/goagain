@@ -167,7 +167,7 @@
           <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
             <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
             <code class="text-sm text-gray-300">
-              <span class="text-green-400">curl</span> <span class="text-yellow-300">"https://api.goagain.dev/cards?name=Strike&class=Warrior&limit=5"</span>
+              <span class="text-green-400">curl</span> <span class="text-yellow-300">"https://api.goagain.dev/v1/cards?name=Strike&class=Warrior&limit=5"</span>
             </code>
           </div>
         </div>
@@ -181,7 +181,7 @@
           <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
             <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
             <code class="text-sm text-gray-300">
-              <span class="text-green-400">curl</span> <span class="text-yellow-300">"https://api.goagain.dev/cards/enlightened-strike-red"</span>
+              <span class="text-green-400">curl</span> <span class="text-yellow-300">"https://api.goagain.dev/v1/cards/enlightened-strike-red"</span>
             </code>
           </div>
         </div>
@@ -222,35 +222,35 @@
           </thead>
           <tbody class="divide-y divide-gray-800">
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /cards</code></td>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/cards</code></td>
               <td class="py-3 px-4 text-gray-400">Search cards with filters (name, type, class, set, pitch, keyword, q, legal_in)</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /cards/{id}</code></td>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/cards/{id}</code></td>
               <td class="py-3 px-4 text-gray-400">Get card by unique ID or name</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /cards/{id}/legality</code></td>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/cards/{id}/legality</code></td>
               <td class="py-3 px-4 text-gray-400">Get card legality across all formats</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /sets</code></td>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/sets</code></td>
               <td class="py-3 px-4 text-gray-400">List all card sets</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /sets/{id}</code></td>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/sets/{id}</code></td>
               <td class="py-3 px-4 text-gray-400">Get set details with cards</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /keywords</code></td>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/keywords</code></td>
               <td class="py-3 px-4 text-gray-400">List all game keywords</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /keywords/{name}</code></td>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/keywords/{name}</code></td>
               <td class="py-3 px-4 text-gray-400">Get keyword description</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /abilities</code></td>
+              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/abilities</code></td>
               <td class="py-3 px-4 text-gray-400">List all card abilities</td>
             </tr>
             <tr>
