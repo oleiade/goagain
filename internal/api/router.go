@@ -138,24 +138,17 @@ func serveOpenAPI(w http.ResponseWriter, r *http.Request) {
 }
 
 func serveDocs(w http.ResponseWriter, r *http.Request) {
-	// Serve Swagger UI via CDN
+	// Serve Scalar API documentation
 	html := `<!DOCTYPE html>
 <html>
 <head>
   <title>Flesh and Blood Cards API - Documentation</title>
-  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-  <div id="swagger-ui"></div>
-  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-  <script>
-    SwaggerUIBundle({
-      url: '/openapi.yaml',
-      dom_id: '#swagger-ui',
-      presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
-      layout: "BaseLayout"
-    });
-  </script>
+  <script id="api-reference" data-url="/openapi.yaml"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
 </body>
 </html>`
 	w.Header().Set("Content-Type", "text/html")
