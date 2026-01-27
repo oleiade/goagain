@@ -23,6 +23,9 @@ var openAPISpec []byte
 //go:embed landing.html
 var landingPage []byte
 
+//go:embed static/tailwind.min.css
+var tailwindCSS []byte
+
 // Config holds configuration for the API server.
 type Config struct {
 	CORSOrigins    []string
@@ -92,6 +95,7 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	mux.HandleFunc("GET /openapi.yaml", serveOpenAPI)
 	mux.HandleFunc("GET /openapi", serveOpenAPI)
 	mux.HandleFunc("GET /docs", serveDocs)
+	mux.HandleFunc("GET /static/tailwind.min.css", serveTailwindCSS)
 
 	// API v1 endpoints
 	mux.HandleFunc("GET /v1/cards", h.ListCards)
@@ -153,6 +157,12 @@ func serveDocs(w http.ResponseWriter, r *http.Request) {
 </html>`
 	w.Header().Set("Content-Type", "text/html")
 	_, _ = w.Write([]byte(html))
+}
+
+func serveTailwindCSS(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/css; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	_, _ = w.Write(tailwindCSS)
 }
 
 func corsMiddleware(next http.Handler, config Config) http.Handler {
