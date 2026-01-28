@@ -3,8 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>goagain - Flesh and Blood Card Data API</title>
-  <meta name="description" content="Free REST API and MCP server for Flesh and Blood trading card game data. Access cards, sets, keywords, and format legality information.">
+  <title>goagain - Flesh and Blood Card API & MCP Server</title>
+  <meta name="description" content="Free API for Flesh and Blood TCG card data. No API key required. REST endpoints and MCP server for Claude, ChatGPT, and custom apps.">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="goagain - Flesh and Blood Card API">
+  <meta property="og:description" content="Free API for Flesh and Blood TCG card data. No API key required.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://api.goagain.dev">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="goagain - Flesh and Blood Card API">
+  <meta name="twitter:description" content="Free API for Flesh and Blood TCG card data. No API key required.">
+
   <link rel="stylesheet" href="/static/tailwind.min.css" integrity="sha384-LjTw9CRQSw804xjrrxDq7SW1y/M1IiAqcB7vcCuIVGS/o3+ZZffiEJWJI8uCxlde" crossorigin="anonymous">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -63,11 +75,14 @@
     <div class="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20"></div>
     <div class="max-w-6xl mx-auto px-6 py-20 relative">
       <div class="text-center">
-        <h1 class="text-5xl md:text-6xl font-bold mb-6">
-          <span class="gradient-text">goagain</span>
+        <h1 class="text-4xl md:text-5xl font-bold mb-6">
+          <span class="gradient-text">Flesh and Blood card data for your apps and AI</span>
         </h1>
-        <p class="text-xl md:text-2xl text-gray-400 mb-8 max-w-2xl mx-auto">
-          Free REST API and MCP server for <span class="text-purple-400">Flesh and Blood</span> card data
+        <p class="text-xl md:text-2xl text-gray-300 mb-4 max-w-2xl mx-auto">
+          No API key. No setup. Query cards, sets, and legality in seconds.
+        </p>
+        <p class="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
+          For developers building deck builders, trackers, and AI tools for the FaB community.
         </p>
         <div class="flex flex-wrap gap-4 justify-center">
           <a href="/docs" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
@@ -94,9 +109,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold mb-2">REST API</h3>
+          <h3 class="text-xl font-semibold mb-2">Build Apps Fast</h3>
           <p class="text-gray-400 mb-4">
-            Simple HTTP endpoints for cards, sets, keywords, and format legality. JSON responses, CORS enabled.
+            REST API with simple HTTP endpoints for cards, sets, keywords, and format legality. JSON responses, CORS enabled.
           </p>
           <a href="/docs" class="text-purple-400 hover:text-purple-300 font-medium">
             View API Docs &rarr;
@@ -110,9 +125,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold mb-2">MCP Server</h3>
+          <h3 class="text-xl font-semibold mb-2">Works with Claude & ChatGPT</h3>
           <p class="text-gray-400 mb-4">
-            Model Context Protocol server for AI assistants. Works with Claude, ChatGPT, and other MCP-compatible clients.
+            MCP server for AI assistants. Model Context Protocol compatible with Claude, ChatGPT, and other clients.
           </p>
           <a href="https://github.com/oleiade/goagain#mcp-server" class="text-blue-400 hover:text-blue-300 font-medium">
             Setup Guide &rarr;
@@ -126,9 +141,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
             </svg>
           </div>
-          <h3 class="text-xl font-semibold mb-2">Complete Data</h3>
+          <h3 class="text-xl font-semibold mb-2">Always Current</h3>
           <p class="text-gray-400 mb-4">
-            All cards, sets, keywords, abilities, and format legality. Updated regularly from official sources.
+            Complete data with all cards, sets, keywords, abilities, and format legality. Updated regularly from official sources.
           </p>
           <a href="/health" class="text-green-400 hover:text-green-300 font-medium">
             Check Status &rarr;
@@ -143,7 +158,20 @@
     <div class="max-w-4xl mx-auto">
       <h2 class="text-3xl font-bold text-center mb-12">Quick Start</h2>
 
-      <div class="space-y-8">
+      <!-- Tab Navigation -->
+      <div class="flex justify-center mb-8">
+        <div class="inline-flex rounded-lg border border-gray-700 p-1 bg-gray-800/50">
+          <button id="tab-app" onclick="switchTab('app')" class="tab-btn px-6 py-2 rounded-md text-sm font-medium transition-colors bg-purple-600 text-white">
+            I'm building an app
+          </button>
+          <button id="tab-ai" onclick="switchTab('ai')" class="tab-btn px-6 py-2 rounded-md text-sm font-medium transition-colors text-gray-400 hover:text-white">
+            I want this in Claude
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content: Building an App -->
+      <div id="content-app" class="tab-content space-y-8">
         <!-- Docker Quick Start -->
         <div>
           <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -185,13 +213,17 @@
             </code>
           </div>
         </div>
+      </div>
 
-        <!-- MCP Example -->
+      <!-- Tab Content: Using with Claude -->
+      <div id="content-ai" class="tab-content space-y-8 hidden">
+        <!-- MCP Config -->
         <div>
           <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
             <span class="bg-blue-600 text-xs px-2 py-1 rounded">MCP</span>
             Add to Claude Desktop
           </h3>
+          <p class="text-gray-400 text-sm mb-3">Add this to your Claude Desktop configuration file:</p>
           <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
             <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
             <pre class="text-sm text-gray-300"><code>{
@@ -202,6 +234,29 @@
   }
 }</code></pre>
           </div>
+        </div>
+
+        <!-- Example Prompts -->
+        <div>
+          <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
+            <span class="bg-green-600 text-xs px-2 py-1 rounded">Try it</span>
+            Example prompts
+          </h3>
+          <p class="text-gray-400 text-sm mb-3">Once configured, ask Claude questions like:</p>
+          <ul class="space-y-3">
+            <li class="flex items-start gap-3">
+              <span class="text-purple-400 mt-1">&#10145;</span>
+              <span class="text-gray-300">"What Ninja attacks have go again?"</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-purple-400 mt-1">&#10145;</span>
+              <span class="text-gray-300">"Show me all Briar cards legal in Classic Constructed"</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="text-purple-400 mt-1">&#10145;</span>
+              <span class="text-gray-300">"Compare Enlightened Strike to Razor Reflex"</span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -340,6 +395,55 @@
     </div>
   </section>
 
+  <!-- FAQ Section -->
+  <section class="py-20 px-6" itemscope itemtype="https://schema.org/FAQPage">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+
+      <div class="space-y-6">
+        <!-- FAQ 1 -->
+        <div class="card-gradient rounded-xl p-6 border border-gray-800" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="text-lg font-semibold mb-3" itemprop="name">Is there a Flesh and Blood card database API?</h3>
+          <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+            <p class="text-gray-400" itemprop="text">
+              Yes! goagain provides a free REST API for Flesh and Blood TCG card data. You can search cards, filter by class, type, keywords, and check format legality. No API key or authentication required.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 2 -->
+        <div class="card-gradient rounded-xl p-6 border border-gray-800" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="text-lg font-semibold mb-3" itemprop="name">How do I get FaB card data for my project?</h3>
+          <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+            <p class="text-gray-400" itemprop="text">
+              Make HTTP requests to api.goagain.dev endpoints. For example, <code class="text-purple-400">GET /v1/cards?class=Ninja</code> returns all Ninja cards. The API supports JSON responses and CORS, so you can call it directly from web apps.
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 3 -->
+        <div class="card-gradient rounded-xl p-6 border border-gray-800" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="text-lg font-semibold mb-3" itemprop="name">Can I use Claude to look up Flesh and Blood cards?</h3>
+          <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+            <p class="text-gray-400" itemprop="text">
+              Yes! goagain includes an MCP server that works with Claude Desktop and other AI assistants. Add the MCP configuration to Claude, then ask questions like "What Ninja attacks have go again?" or "Show me Briar cards legal in CC."
+            </p>
+          </div>
+        </div>
+
+        <!-- FAQ 4 -->
+        <div class="card-gradient rounded-xl p-6 border border-gray-800" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="text-lg font-semibold mb-3" itemprop="name">Does this API require authentication?</h3>
+          <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
+            <p class="text-gray-400" itemprop="text">
+              No authentication required. The API is free and open for everyone. Rate limiting is applied to ensure fair usage, but there are no API keys or signup needed to start querying card data.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer class="py-12 px-6 border-t border-gray-800">
     <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
@@ -355,8 +459,29 @@
     </div>
   </footer>
 
-  <!-- Copy to Clipboard Script -->
+  <!-- Scripts -->
   <script>
+    // Tab switching functionality
+    function switchTab(tab) {
+      // Update tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-purple-600', 'text-white');
+        btn.classList.add('text-gray-400', 'hover:text-white');
+      });
+
+      const activeBtn = document.getElementById('tab-' + tab);
+      activeBtn.classList.remove('text-gray-400', 'hover:text-white');
+      activeBtn.classList.add('bg-purple-600', 'text-white');
+
+      // Update tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+
+      document.getElementById('content-' + tab).classList.remove('hidden');
+    }
+
+    // Copy to clipboard functionality
     function copyCode(button) {
       const codeBlock = button.parentElement;
       const code = codeBlock.querySelector('code');
