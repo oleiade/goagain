@@ -2,15 +2,20 @@ package observability
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"go.opentelemetry.io/otel/log/global"
 )
 
 // SetupLogger configures the global slog logger based on the provided config.
+// It creates a multi-handler that writes to both stdout and OTel.
 func SetupLogger(config Config) *slog.Logger {
 	var level slog.Level
 	switch config.LogLevel {
@@ -28,18 +33,76 @@ func SetupLogger(config Config) *slog.Logger {
 		Level: level,
 	}
 
-	var handler slog.Handler
+	// Create stdout handler for local output
+	var stdoutHandler slog.Handler
 	if config.LogFormat == "text" {
-		handler = slog.NewTextHandler(os.Stdout, opts)
+		stdoutHandler = slog.NewTextHandler(os.Stdout, opts)
 	} else {
-		handler = slog.NewJSONHandler(os.Stdout, opts)
+		stdoutHandler = slog.NewJSONHandler(os.Stdout, opts)
+	}
+
+	// Create OTel handler that bridges to OTel log provider
+	otelHandler := otelslog.NewHandler(config.ServiceName,
+		otelslog.WithLoggerProvider(global.GetLoggerProvider()),
+	)
+
+	// Combine handlers: logs go to both stdout and OTel
+	multiHandler := &multiHandler{
+		handlers: []slog.Handler{stdoutHandler, otelHandler},
 	}
 
 	// Add service name as a default attribute
-	logger := slog.New(handler).With("service", config.ServiceName)
+	logger := slog.New(multiHandler).With("service", config.ServiceName)
 	slog.SetDefault(logger)
 
 	return logger
+}
+
+// multiHandler fans out log records to multiple handlers.
+type multiHandler struct {
+	handlers []slog.Handler
+}
+
+func (h *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	for _, handler := range h.handlers {
+		if handler.Enabled(ctx, level) {
+			return true
+		}
+	}
+	return false
+}
+
+func (h *multiHandler) Handle(ctx context.Context, r slog.Record) error {
+	for _, handler := range h.handlers {
+		if handler.Enabled(ctx, r.Level) {
+			if err := handler.Handle(ctx, r); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (h *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	handlers := make([]slog.Handler, len(h.handlers))
+	for i, handler := range h.handlers {
+		handlers[i] = handler.WithAttrs(attrs)
+	}
+	return &multiHandler{handlers: handlers}
+}
+
+func (h *multiHandler) WithGroup(name string) slog.Handler {
+	handlers := make([]slog.Handler, len(h.handlers))
+	for i, handler := range h.handlers {
+		handlers[i] = handler.WithGroup(name)
+	}
+	return &multiHandler{handlers: handlers}
+}
+
+// DiscardLogger returns a logger that discards all output.
+// Useful for testing or when logging should be suppressed.
+func DiscardLogger() *slog.Logger {
+	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }
 
 // LoggingMiddleware logs HTTP requests with structured logging.

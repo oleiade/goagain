@@ -1,36 +1,34 @@
 import http from 'k6/http';
-import { check, group } from 'k6';
-import { Counter } from 'k6/metrics';
+import { group } from 'k6';
 import { expect } from 'https://jslib.k6.io/k6-testing/0.6.1/index.js';
 
-// Custom metrics
-const rateLimitHits = new Counter('rate_limit_hits');
+/**
+ * Smoke/Functional Tests for goagain API
+ *
+ * Purpose: Validate API contracts, functional correctness, and catch regressions
+ * Run: On every PR and push to main
+ * Duration: ~30s
+ *
+ * Usage:
+ *   k6 run tests/k6/api.js
+ *   API_URL=http://localhost:8080 k6 run tests/k6/api.js
+ */
 
 // Configuration
 const BASE_URL = __ENV.API_URL || 'http://localhost:8080';
 
 export const options = {
   scenarios: {
-    // Functional tests - run once
     functional: {
       executor: 'shared-iterations',
       vus: 1,
       iterations: 1,
-      exec: 'functionalTests',
-    },
-    // Rate limit test - burst traffic
-    rate_limit: {
-      executor: 'constant-arrival-rate',
-      rate: 150, // 150 requests per second (above default 100 RPS limit)
-      timeUnit: '1s',
-      duration: '5s',
-      preAllocatedVUs: 20,
-      exec: 'rateLimitTest',
-      startTime: '10s', // Start after functional tests
     },
   },
   thresholds: {
-    http_req_failed: ['rate<0.5'], // Allow rate limit failures (429s count as failures)
+    http_req_failed: ['rate<0.001'], // Near-zero errors allowed
+    http_req_duration: ['p(95)<500'], // All requests under 500ms
+    checks: ['rate==1.0'], // All checks must pass
   },
 };
 
@@ -49,7 +47,9 @@ export function setup() {
   expect(healthData.stats, 'Health check must return stats').toBeDefined();
   expect(healthData.stats.cards, 'Cards must be loaded').toBeGreaterThan(0);
 
-  console.log(`API is healthy. Loaded ${healthData.stats.cards} cards, ${healthData.stats.sets} sets`);
+  console.log(
+    `API is healthy. Loaded ${healthData.stats.cards} cards, ${healthData.stats.sets} sets`
+  );
 
   return { baseUrl: BASE_URL, stats: healthData.stats };
 }
@@ -70,7 +70,7 @@ export function functionalTests(data) {
 
   group('Cards Endpoint', () => {
     // List cards with limit
-    const listRes = http.get(`${BASE}/cards?limit=10`);
+    const listRes = http.get(`${BASE}/v1/cards?limit=10`);
     expect(listRes.status).toBe(200);
 
     const listBody = listRes.json();
@@ -79,17 +79,38 @@ export function functionalTests(data) {
     expect(listBody.total).toBeGreaterThan(0);
 
     // Search cards by name
-    const searchRes = http.get(`${BASE}/cards?name=Strike&limit=5`);
+    const searchRes = http.get(`${BASE}/v1/cards?name=Strike&limit=5`);
     expect(searchRes.status).toBe(200);
 
     const searchBody = searchRes.json();
     expect(searchBody.data).toBeDefined();
     expect(searchBody.data.length).toBeGreaterThan(0);
 
+    // Filter by class
+    const classRes = http.get(`${BASE}/v1/cards?class=Ninja&limit=5`);
+    expect(classRes.status).toBe(200);
+
+    const classBody = classRes.json();
+    expect(classBody.data).toBeDefined();
+
+    // Filter by pitch
+    const pitchRes = http.get(`${BASE}/v1/cards?pitch=3&limit=5`);
+    expect(pitchRes.status).toBe(200);
+
+    const pitchBody = pitchRes.json();
+    expect(pitchBody.data).toBeDefined();
+
+    // Filter by keyword
+    const keywordRes = http.get(`${BASE}/v1/cards?keyword=Go%20again&limit=5`);
+    expect(keywordRes.status).toBe(200);
+
+    const keywordBody = keywordRes.json();
+    expect(keywordBody.data).toBeDefined();
+
     // Get specific card (using first result from search)
     if (searchBody.data && searchBody.data.length > 0) {
       const cardId = searchBody.data[0].unique_id;
-      const cardRes = http.get(`${BASE}/cards/${cardId}`);
+      const cardRes = http.get(`${BASE}/v1/cards/${cardId}`);
       expect(cardRes.status).toBe(200);
 
       const card = cardRes.json();
@@ -100,7 +121,7 @@ export function functionalTests(data) {
     // Get card legality
     if (searchBody.data && searchBody.data.length > 0) {
       const cardId = searchBody.data[0].unique_id;
-      const legalityRes = http.get(`${BASE}/cards/${cardId}/legality`);
+      const legalityRes = http.get(`${BASE}/v1/cards/${cardId}/legality`);
       expect(legalityRes.status).toBe(200);
 
       const legality = legalityRes.json();
@@ -111,16 +132,16 @@ export function functionalTests(data) {
   });
 
   group('Sets Endpoint', () => {
-    const res = http.get(`${BASE}/sets`);
+    const res = http.get(`${BASE}/v1/sets`);
     expect(res.status).toBe(200);
 
     const body = res.json();
     expect(Array.isArray(body)).toBe(true);
     expect(body.length).toBeGreaterThan(0);
 
-    // Get specific set
+    // Get specific set with cards
     if (body.length > 0) {
-      const setRes = http.get(`${BASE}/sets/${body[0].id}`);
+      const setRes = http.get(`${BASE}/v1/sets/${body[0].id}`);
       expect(setRes.status).toBe(200);
 
       const setBody = setRes.json();
@@ -131,7 +152,7 @@ export function functionalTests(data) {
   });
 
   group('Keywords Endpoint', () => {
-    const res = http.get(`${BASE}/keywords`);
+    const res = http.get(`${BASE}/v1/keywords`);
     expect(res.status).toBe(200);
 
     const body = res.json();
@@ -140,7 +161,7 @@ export function functionalTests(data) {
 
     // Get specific keyword
     if (body.length > 0) {
-      const kwRes = http.get(`${BASE}/keywords/${encodeURIComponent(body[0].name)}`);
+      const kwRes = http.get(`${BASE}/v1/keywords/${encodeURIComponent(body[0].name)}`);
       expect(kwRes.status).toBe(200);
 
       const kw = kwRes.json();
@@ -149,7 +170,7 @@ export function functionalTests(data) {
   });
 
   group('Abilities Endpoint', () => {
-    const res = http.get(`${BASE}/abilities`);
+    const res = http.get(`${BASE}/v1/abilities`);
     expect(res.status).toBe(200);
 
     const body = res.json();
@@ -158,7 +179,7 @@ export function functionalTests(data) {
 
   group('CORS Headers', () => {
     // Test preflight request
-    const preflightRes = http.options(`${BASE}/cards`, null, {
+    const preflightRes = http.options(`${BASE}/v1/cards`, null, {
       headers: {
         Origin: 'https://example.com',
         'Access-Control-Request-Method': 'GET',
@@ -176,7 +197,7 @@ export function functionalTests(data) {
     expect(allowMethods, 'CORS Allow-Methods header must be present').toBeDefined();
 
     // Test actual request with Origin header
-    const res = http.get(`${BASE}/cards?limit=1`, {
+    const res = http.get(`${BASE}/v1/cards?limit=1`, {
       headers: {
         Origin: 'https://example.com',
       },
@@ -187,7 +208,7 @@ export function functionalTests(data) {
 
   group('Error Handling', () => {
     // 404 for non-existent card
-    const notFoundRes = http.get(`${BASE}/cards/non-existent-card-id-12345`);
+    const notFoundRes = http.get(`${BASE}/v1/cards/non-existent-card-id-12345`);
     expect(notFoundRes.status).toBe(404);
 
     const errorBody = notFoundRes.json();
@@ -215,41 +236,14 @@ export function functionalTests(data) {
   });
 }
 
-// Rate limit test - attempts to exceed the rate limit
-export function rateLimitTest(data) {
-  const res = http.get(`${data.baseUrl}/health`);
-
-  if (res.status === 429) {
-    rateLimitHits.add(1);
-
-    // Verify rate limit response format
-    check(res, {
-      'rate limit has retry-after header': (r) => r.headers['Retry-After'] !== undefined,
-      'rate limit response is JSON': (r) => {
-        try {
-          const body = JSON.parse(r.body);
-          return body.error === 'rate limit exceeded';
-        } catch {
-          return false;
-        }
-      },
-    });
-  } else {
-    check(res, {
-      'non-rate-limited request succeeds': (r) => r.status === 200,
-    });
-  }
-}
-
-// Default function - used when running without scenarios (e.g., k6 run --iterations 1)
-// When scenarios are used, this function is not called
+// Default function - runs the functional tests
 export default function (data) {
   functionalTests(data);
 }
 
 // Teardown - runs once after all tests
 export function teardown(data) {
-  console.log('\n=== Test Summary ===');
+  console.log('\n=== Smoke Test Summary ===');
   console.log(`API URL: ${data.baseUrl}`);
   console.log(`Cards in database: ${data.stats.cards}`);
   console.log(`Sets in database: ${data.stats.sets}`);

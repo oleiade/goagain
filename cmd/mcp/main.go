@@ -2,18 +2,23 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 
 	mcp "github.com/mark3labs/mcp-go/server"
 	"github.com/oleiade/goagain/internal/data"
 	fabmcp "github.com/oleiade/goagain/internal/mcp"
 	"github.com/oleiade/goagain/internal/observability"
 	"github.com/oleiade/goagain/internal/server"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
@@ -29,7 +34,23 @@ func main() {
 		_, _ = fmt.Sscanf(envPort, "%d", port)
 	}
 
-	// Initialize observability
+	// Handle SIGINT (CTRL+C) gracefully.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	// Set up OpenTelemetry first (before logger, so logs can flow to OTel).
+	otelConfig := observability.LoadOTelConfig("goagain-mcp")
+	otelShutdown, err := observability.SetupOTelSDK(ctx, otelConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Handle shutdown properly so nothing leaks.
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
+
+	// Initialize observability (logger and metrics use OTel now)
 	obsConfig := observability.LoadConfig("goagain-mcp")
 	logger := observability.SetupLogger(obsConfig)
 
@@ -60,7 +81,7 @@ func main() {
 	case "stdio":
 		runStdio(mcpServer, logger)
 	case "http":
-		runHTTP(mcpServer, *port, logger, metrics, obsConfig)
+		runHTTP(mcpServer, *port, logger, metrics)
 	default:
 		logger.Error("Unknown mode", slog.String("mode", *mode))
 		os.Exit(1)
@@ -75,10 +96,10 @@ func runStdio(mcpServer *fabmcp.Server, logger *slog.Logger) {
 	}
 }
 
-func runHTTP(mcpServer *fabmcp.Server, port int, logger *slog.Logger, metrics *observability.Metrics, obsConfig observability.Config) {
+func runHTTP(mcpServer *fabmcp.Server, port int, logger *slog.Logger, metrics *observability.Metrics) {
 	httpServer := mcp.NewStreamableHTTPServer(mcpServer.MCPServer())
 
-	// Create a mux to add health and metrics endpoints
+	// Create a mux to add health endpoint
 	mux := http.NewServeMux()
 
 	// Health check endpoint
@@ -88,11 +109,6 @@ func runHTTP(mcpServer *fabmcp.Server, port int, logger *slog.Logger, metrics *o
 			"status": "ok",
 		})
 	})
-
-	// Metrics endpoint
-	if metrics != nil && obsConfig.MetricsEnabled {
-		mux.Handle("GET "+obsConfig.MetricsPath, metrics.Handler())
-	}
 
 	// MCP endpoint (handles /mcp by default)
 	mux.Handle("/", httpServer)
@@ -110,6 +126,11 @@ func runHTTP(mcpServer *fabmcp.Server, port int, logger *slog.Logger, metrics *o
 
 	// Request ID middleware
 	handler = observability.RequestIDMiddleware(handler)
+
+	// Wrap with OTel HTTP tracing
+	handler = otelhttp.NewHandler(handler, "goagain-mcp",
+		otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
+	)
 
 	srv := server.New("mcp-http", port, logger, handler)
 	srv.Run()

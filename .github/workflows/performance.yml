@@ -1,0 +1,148 @@
+name: Performance Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 2 * * *" # Daily at 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: "Test type to run"
+        required: true
+        default: "smoke"
+        type: choice
+        options:
+          - smoke
+          - load
+          - stress
+          - all
+
+jobs:
+  smoke-test:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25.6"
+
+      - name: Build API
+        run: go build -o goagain-api ./cmd/api
+
+      - name: Start API server
+        run: |
+          ./goagain-api &
+          echo "Waiting for API server to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null; then
+              echo "API server is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "ERROR: API server failed to start within 30 seconds"
+          exit 1
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run smoke tests
+        run: k6 run tests/k6/api.js
+        env:
+          API_URL: http://localhost:8080
+
+  load-test:
+    name: Load Tests
+    runs-on: ubuntu-latest
+    needs: smoke-test
+    if: |
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.test_type == 'load' || github.event.inputs.test_type == 'all'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25.6"
+
+      - name: Build API
+        run: go build -o goagain-api ./cmd/api
+
+      - name: Start API server
+        run: |
+          ./goagain-api &
+          echo "Waiting for API server to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null; then
+              echo "API server is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "ERROR: API server failed to start within 30 seconds"
+          exit 1
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run load tests
+        run: k6 run tests/k6/load.js
+        env:
+          API_URL: http://localhost:8080
+
+  stress-test:
+    name: Stress Tests
+    runs-on: ubuntu-latest
+    needs: load-test
+    if: |
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.test_type == 'stress' || github.event.inputs.test_type == 'all'))
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25.6"
+
+      - name: Build API
+        run: go build -o goagain-api ./cmd/api
+
+      - name: Start API server
+        run: |
+          ./goagain-api &
+          echo "Waiting for API server to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null; then
+              echo "API server is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "ERROR: API server failed to start within 30 seconds"
+          exit 1
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run stress tests
+        run: k6 run tests/k6/stress.js
+        env:
+          API_URL: http://localhost:8080

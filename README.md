@@ -8,7 +8,7 @@ A REST API and MCP (Model Context Protocol) server for [Flesh and Blood](https:/
 - **MCP Server** - Integrate Flesh and Blood card data into AI assistants (Claude, etc.)
 - **Format Legality** - Check card legality across Blitz, Classic Constructed, Commoner, Living Legend, Silver Age, and UPF
 - **Full-Text Search** - Search card abilities and effects
-- **Observability** - Prometheus metrics and structured JSON logging for production deployments
+- **Observability** - OpenTelemetry traces, metrics, and logs for production deployments
 - **Docker Ready** - Multi-platform container images for easy deployment
 
 ## Hosted Service
@@ -62,7 +62,6 @@ docker run -p 8081:8081 -e MCP_MODE=http ghcr.io/oleiade/goagain-mcp
 | `GET /keywords` | List all keywords |
 | `GET /keywords/{name}` | Get keyword description |
 | `GET /abilities` | List all abilities |
-| `GET /metrics` | Prometheus metrics (when enabled) |
 
 ### Card Search Parameters
 
@@ -184,42 +183,82 @@ All configuration is via environment variables. See `.env.example` for a complet
 |----------|---------|-------------|
 | `LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
 | `LOG_FORMAT` | `json` | Log format: `json` or `text` |
-| `SERVICE_NAME` | `goagain-api` / `goagain-mcp` | Service name for metrics and logs |
-| `METRICS_ENABLED` | `true` | Enable Prometheus metrics endpoint |
-| `METRICS_PATH` | `/metrics` | Path for metrics endpoint |
+| `SERVICE_NAME` | `goagain-api` / `goagain-mcp` | Service name for logs |
+| `METRICS_ENABLED` | `true` | Enable OTel metrics collection |
+
+### OpenTelemetry
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | _(none)_ | OTLP endpoint (e.g., `localhost:4318`). If unset, telemetry goes to stdout |
+| `OTEL_SERVICE_NAME` | `goagain-api` / `goagain-mcp` | Service name for traces, metrics, and logs |
+| `OTEL_SERVICE_VERSION` | `0.1.0` | Service version reported in telemetry |
+| `OTEL_ENVIRONMENT` | `development` | Deployment environment (e.g., `production`, `staging`) |
 
 ## Observability
 
-Both servers include built-in observability features for production deployments.
+Both servers include built-in OpenTelemetry observability for production deployments, providing distributed tracing, metrics, and structured logs.
 
-### Prometheus Metrics
+### OpenTelemetry Integration
 
-When enabled, metrics are exposed at `/metrics` (configurable via `METRICS_PATH`).
+By default, all telemetry is output to stdout (useful for local development). To send telemetry to an OTLP-compatible collector (e.g., Grafana Alloy, Jaeger, or any OTel Collector), set the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable:
+
+```bash
+# Send telemetry to a local collector (applies to both API and MCP servers)
+export OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4318
+
+# Optional: customize service metadata
+export OTEL_SERVICE_NAME=goagain-api  # or goagain-mcp for MCP server
+export OTEL_SERVICE_VERSION=1.0.0
+export OTEL_ENVIRONMENT=production
+```
+
+Both the API server (`cmd/api`) and MCP server (`cmd/mcp`) use identical OTel configuration and export traces, metrics, and logs to the same endpoint.
+
+### Distributed Tracing
+
+**HTTP Requests** (both API and MCP servers):
+
+HTTP requests are automatically traced using `otelhttp`. Each request creates a span with:
+- HTTP method, route, and status code
+- Request/response sizes
+- Timing information
+- Trace context propagation (W3C TraceContext and Baggage)
+
+**MCP Tool Invocations** (MCP server only):
+
+Each MCP tool call creates a child span (`mcp.tool.<name>`) with:
+- Tool name and execution duration
+- Result count and error status
+- Linked to parent HTTP span (in HTTP mode)
+
+### Metrics
+
+Metrics are collected using the OTel Metrics API and exported via OTLP.
 
 **HTTP Metrics:**
-- `http_requests_total{method,path,status_code}` - Total HTTP requests
-- `http_request_duration_seconds{method,path,status_code}` - Request latency histogram
-- `http_requests_in_flight` - Current in-flight requests
-- `http_response_size_bytes{method,path,status_code}` - Response size histogram
-- `http_rate_limit_rejections_total` - Rate limit rejections (API only)
+- `http.server.request.total` - Total HTTP requests
+- `http.server.request.duration` - Request latency histogram (seconds)
+- `http.server.active_requests` - Current in-flight requests
+- `http.server.response.size` - Response size histogram (bytes)
+- `http.server.rate_limit.rejected` - Rate limit rejections (API only)
 
 **MCP Tool Metrics:**
-- `mcp_tool_invocations_total{tool_name,status}` - Tool invocation count
-- `mcp_tool_duration_seconds{tool_name,status}` - Tool execution latency
-- `mcp_tool_result_count{tool_name}` - Results returned per invocation
-- `mcp_tool_in_flight{tool_name}` - In-flight tool invocations
+- `mcp.tool.invocations.total` - Tool invocation count
+- `mcp.tool.duration` - Tool execution latency (seconds)
+- `mcp.tool.result_count` - Results returned per invocation
+- `mcp.tool.active` - In-flight tool invocations
 
 **Application Metrics:**
-- `goagain_data_cards_total` - Total cards loaded
-- `goagain_data_sets_total` - Total sets loaded
-- `goagain_data_keywords_total` - Total keywords loaded
-- `goagain_data_abilities_total` - Total abilities loaded
-
-Plus standard Go runtime metrics (`go_*`, `process_*`).
+- `goagain.data.cards` - Total cards loaded
+- `goagain.data.sets` - Total sets loaded
+- `goagain.data.keywords` - Total keywords loaded
+- `goagain.data.abilities` - Total abilities loaded
+- `goagain.data.index_entries` - Index entries by index name
 
 ### Structured Logging
 
-Logs are output to stdout in structured JSON format (configurable to text):
+Logs are output to stdout in structured JSON format and also sent to the OTel log pipeline:
 
 ```json
 {
@@ -238,9 +277,26 @@ Logs are output to stdout in structured JSON format (configurable to text):
 
 ### Grafana Cloud Integration
 
-For Grafana Cloud, configure [Grafana Alloy](https://grafana.com/docs/alloy/) to:
-1. Scrape the `/metrics` endpoint for Prometheus metrics
-2. Collect stdout logs for structured logging
+For Grafana Cloud, configure [Grafana Alloy](https://grafana.com/docs/alloy/) to receive OTLP telemetry:
+
+```alloy
+otelcol.receiver.otlp "default" {
+  grpc { endpoint = "0.0.0.0:4317" }
+  http { endpoint = "0.0.0.0:4318" }
+
+  output {
+    traces  = [otelcol.exporter.otlp.grafana.input]
+    metrics = [otelcol.exporter.otlp.grafana.input]
+    logs    = [otelcol.exporter.otlp.grafana.input]
+  }
+}
+```
+
+Then point the application to Alloy:
+
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4318
+```
 
 ## Development
 

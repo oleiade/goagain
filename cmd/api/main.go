@@ -2,15 +2,20 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"log/slog"
 	"os"
+	"os/signal"
 
 	"github.com/oleiade/goagain/internal/api"
 	"github.com/oleiade/goagain/internal/data"
 	"github.com/oleiade/goagain/internal/observability"
 	"github.com/oleiade/goagain/internal/server"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func main() {
@@ -22,7 +27,23 @@ func main() {
 		_, _ = fmt.Sscanf(envPort, "%d", port)
 	}
 
-	// Initialize observability
+	// Handle SIGINT (CTRL+C) gracefully.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	// Set up OpenTelemetry first (before logger, so logs can flow to OTel).
+	otelConfig := observability.LoadOTelConfig("goagain-api")
+	otelShutdown, err := observability.SetupOTelSDK(ctx, otelConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Handle shutdown properly so nothing leaks.
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
+
+	// Initialize observability (logger and metrics use OTel now)
 	obsConfig := observability.LoadConfig("goagain-api")
 	logger := observability.SetupLogger(obsConfig)
 
@@ -49,6 +70,11 @@ func main() {
 
 	router := api.NewRouter(store, logger, metrics, obsConfig)
 
-	srv := server.New("api", *port, logger, router)
+	// Wrap with OTel HTTP tracing
+	handler := otelhttp.NewHandler(router, "goagain-api",
+		otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
+	)
+
+	srv := server.New("api", *port, logger, handler)
 	srv.Run()
 }

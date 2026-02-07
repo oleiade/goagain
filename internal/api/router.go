@@ -107,11 +107,6 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	mux.HandleFunc("GET /v1/keywords/{name}", h.GetKeyword)
 	mux.HandleFunc("GET /v1/abilities", h.ListAbilities)
 
-	// Metrics endpoint
-	if metrics != nil && obsConfig.MetricsEnabled {
-		mux.Handle("GET "+obsConfig.MetricsPath, metrics.Handler())
-	}
-
 	// Build middleware chain (applied in reverse order)
 	handler := http.Handler(mux)
 

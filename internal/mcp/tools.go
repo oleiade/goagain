@@ -14,6 +14,10 @@ import (
 	"github.com/oleiade/goagain/internal/data"
 	"github.com/oleiade/goagain/internal/domain"
 	"github.com/oleiade/goagain/internal/observability"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Server wraps the MCP server with card data access.
@@ -58,9 +62,21 @@ func (s *Server) MCPServer() *server.MCPServer {
 	return s.mcpServer
 }
 
-// instrumentTool wraps a tool handler with metrics and logging.
+// tracer is the OTel tracer for MCP tool invocations.
+var tracer = otel.Tracer("github.com/oleiade/goagain/mcp")
+
+// instrumentTool wraps a tool handler with tracing, metrics, and logging.
 func (s *Server) instrumentTool(toolName string, handler func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		// Start a span for this tool invocation
+		ctx, span := tracer.Start(ctx, "mcp.tool."+toolName,
+			trace.WithSpanKind(trace.SpanKindInternal),
+			trace.WithAttributes(
+				attribute.String("mcp.tool.name", toolName),
+			),
+		)
+		defer span.End()
+
 		start := time.Now()
 
 		if s.metrics != nil {
@@ -76,6 +92,22 @@ func (s *Server) instrumentTool(toolName string, handler func(ctx context.Contex
 		resultCount := 0
 		if result != nil && !result.IsError {
 			resultCount = 1 // Default to 1 for single results
+		}
+
+		// Add span attributes for the result
+		span.SetAttributes(
+			attribute.Int("mcp.tool.result_count", resultCount),
+			attribute.Float64("mcp.tool.duration_ms", float64(duration.Microseconds())/1000.0),
+		)
+
+		// Handle errors in span
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		} else if result != nil && result.IsError {
+			span.SetStatus(codes.Error, "tool returned error")
+		} else {
+			span.SetStatus(codes.Ok, "")
 		}
 
 		// Record metrics
