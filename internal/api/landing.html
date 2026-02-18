@@ -17,135 +17,174 @@
   <meta name="twitter:title" content="goagain - Flesh and Blood Card API">
   <meta name="twitter:description" content="Free API for Flesh and Blood TCG card data. No API key required.">
 
-  <link rel="stylesheet" href="/static/tailwind.min.css" integrity="sha384-LjTw9CRQSw804xjrrxDq7SW1y/M1IiAqcB7vcCuIVGS/o3+ZZffiEJWJI8uCxlde" crossorigin="anonymous">
+  <link rel="stylesheet" href="/static/tailwind.min.css" integrity="sha384-B6OIi/LOY5GIiXkihYVHQeUkZbHflSXQInxFuaD7CSB4TGoN4jvEjKl3h1ZfW8Ou" crossorigin="anonymous">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .gradient-text {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+    :root {
+      --red: #D62828;
+      --blue: #1D4ED8;
+      --yellow: #F59E0B;
     }
-    .card-gradient {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #FAFAF8;
+      color: #1A1A1A;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
+
+    h1, h2, h3, h4 {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+    }
+
     code {
-      font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Mono', 'Consolas', monospace;
+      font-size: 0.875em;
     }
+
+    .color-strip {
+      display: flex;
+      height: 4px;
+    }
+
     .code-block {
       position: relative;
     }
+
     .copy-btn {
       position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
+      top: 0.75rem;
+      right: 0.75rem;
       opacity: 0;
       transition: opacity 0.2s;
     }
+
     .code-block:hover .copy-btn,
     .code-block:focus-within .copy-btn {
       opacity: 1;
     }
+
     .copy-btn.copied {
       opacity: 1;
     }
+
     details summary {
       cursor: pointer;
+      list-style: none;
     }
+
     details summary::-webkit-details-marker {
       display: none;
     }
-    details summary::before {
-      content: '▶';
-      display: inline-block;
-      margin-right: 0.5rem;
-      transition: transform 0.2s;
+
+    .details-icon::before {
+      content: '+';
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-weight: 500;
     }
-    details[open] summary::before {
-      transform: rotate(90deg);
+
+    details[open] .details-icon::before {
+      content: '\2212';
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
     }
   </style>
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen">
+<body class="min-h-screen">
+  <!-- Color Strip -->
+  <div class="color-strip" aria-hidden="true">
+    <div class="flex-1" style="background: var(--red);"></div>
+    <div class="flex-1" style="background: var(--yellow);"></div>
+    <div class="flex-1" style="background: var(--blue);"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="max-w-5xl mx-auto px-6 py-5 flex items-center justify-between">
+    <a href="/" class="text-lg font-bold tracking-tight" style="font-family: 'Space Grotesk', sans-serif;">goagain</a>
+    <div class="flex items-center gap-6 text-sm font-medium">
+      <a href="/docs" class="text-gray-500 hover:text-gray-900 transition-colors cursor-pointer">Docs</a>
+      <a href="https://github.com/oleiade/goagain" class="text-gray-500 hover:text-gray-900 transition-colors cursor-pointer flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </nav>
+
   <!-- Hero Section -->
-  <header class="relative overflow-hidden">
-    <div class="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-blue-900/20"></div>
-    <div class="max-w-6xl mx-auto px-6 py-20 relative">
-      <div class="text-center">
-        <h1 class="text-4xl md:text-5xl font-bold mb-6">
-          <span class="gradient-text">Flesh and Blood card data for your apps and AI</span>
-        </h1>
-        <p class="text-xl md:text-2xl text-gray-300 mb-4 max-w-2xl mx-auto">
-          No API key. No setup. Query cards, sets, and legality in seconds.
-        </p>
-        <p class="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
-          For developers building deck builders, trackers, and AI tools for the FaB community.
-        </p>
-        <div class="flex flex-wrap gap-4 justify-center">
-          <a href="/docs" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            API Documentation
-          </a>
-          <a href="https://github.com/oleiade/goagain" class="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center gap-2">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-            GitHub
-          </a>
+  <header class="border-b border-gray-200">
+    <div class="max-w-5xl mx-auto px-6 py-20 md:py-28 lg:py-32">
+      <div class="lg:grid lg:grid-cols-5 lg:gap-16 lg:items-center">
+        <div class="lg:col-span-3">
+          <h1 class="text-4xl md:text-5xl font-bold tracking-tight leading-tight mb-6">
+            Flesh and Blood card data for your apps and AI
+          </h1>
+          <p class="text-lg md:text-xl text-gray-600 mb-4 leading-relaxed">
+            No API key. No setup. Query cards, sets, and legality in seconds.
+          </p>
+          <p class="text-base text-gray-500 mb-10 leading-relaxed">
+            For developers building deck builders, trackers, and AI tools for the FaB community.
+          </p>
+          <div class="flex flex-wrap gap-3">
+            <a href="/docs" class="inline-flex items-center px-7 py-2.5 bg-gray-900 text-white text-sm font-medium tracking-wider hover:bg-gray-800 transition-colors cursor-pointer uppercase">
+              Documentation
+            </a>
+            <a href="https://github.com/oleiade/goagain" class="inline-flex items-center gap-2 px-7 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium tracking-wider hover:border-gray-900 hover:text-gray-900 transition-colors cursor-pointer uppercase">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+              GitHub
+            </a>
+          </div>
+        </div>
+        <div class="hidden lg:flex lg:col-span-2 lg:justify-end" aria-hidden="true">
+          <div class="relative" style="width: 220px; height: 280px;">
+            <div class="absolute" style="width: 140px; height: 196px; background: var(--red); top: 0; left: 0; transform: rotate(-2deg);"></div>
+            <div class="absolute" style="width: 140px; height: 196px; background: var(--yellow); top: 32px; left: 32px;"></div>
+            <div class="absolute" style="width: 140px; height: 196px; background: var(--blue); top: 64px; left: 64px; transform: rotate(2deg);"></div>
+          </div>
         </div>
       </div>
     </div>
   </header>
 
   <!-- Features Section -->
-  <section class="py-20 px-6">
-    <div class="max-w-6xl mx-auto">
-      <h2 class="text-3xl font-bold text-center mb-12">What You Get</h2>
-      <div class="grid md:grid-cols-3 gap-8">
-        <!-- REST API -->
-        <div class="card-gradient rounded-xl p-6 border border-gray-800">
-          <div class="w-12 h-12 bg-purple-600/20 rounded-lg flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Build Apps Fast</h3>
-          <p class="text-gray-400 mb-4">
+  <section class="py-20 md:py-24 px-6">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-12 md:mb-16">What You Get</h2>
+      <div class="grid md:grid-cols-3 gap-6 md:gap-8">
+        <div class="bg-white p-6 border-l-4" style="border-left-color: var(--red);">
+          <h3 class="text-lg font-semibold mb-3">Build Apps Fast</h3>
+          <p class="text-gray-500 text-sm leading-relaxed mb-4">
             REST API with simple HTTP endpoints for cards, sets, keywords, and format legality. JSON responses, CORS enabled.
           </p>
-          <a href="/docs" class="text-purple-400 hover:text-purple-300 font-medium">
+          <a href="/docs" class="text-sm font-medium hover:opacity-70 transition-opacity cursor-pointer" style="color: var(--red);">
             View API Docs &rarr;
           </a>
         </div>
 
-        <!-- MCP Server -->
-        <div class="card-gradient rounded-xl p-6 border border-gray-800">
-          <div class="w-12 h-12 bg-blue-600/20 rounded-lg flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Works with Claude & ChatGPT</h3>
-          <p class="text-gray-400 mb-4">
+        <div class="bg-white p-6 border-l-4" style="border-left-color: var(--blue);">
+          <h3 class="text-lg font-semibold mb-3">Works with Claude & ChatGPT</h3>
+          <p class="text-gray-500 text-sm leading-relaxed mb-4">
             MCP server for AI assistants. Model Context Protocol compatible with Claude, ChatGPT, and other clients.
           </p>
-          <a href="https://github.com/oleiade/goagain#mcp-server" class="text-blue-400 hover:text-blue-300 font-medium">
+          <a href="https://github.com/oleiade/goagain#mcp-server" class="text-sm font-medium hover:opacity-70 transition-opacity cursor-pointer" style="color: var(--blue);">
             Setup Guide &rarr;
           </a>
         </div>
 
-        <!-- Card Data -->
-        <div class="card-gradient rounded-xl p-6 border border-gray-800">
-          <div class="w-12 h-12 bg-green-600/20 rounded-lg flex items-center justify-center mb-4">
-            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-            </svg>
-          </div>
-          <h3 class="text-xl font-semibold mb-2">Always Current</h3>
-          <p class="text-gray-400 mb-4">
+        <div class="bg-white p-6 border-l-4" style="border-left-color: var(--yellow);">
+          <h3 class="text-lg font-semibold mb-3">Always Current</h3>
+          <p class="text-gray-500 text-sm leading-relaxed mb-4">
             Complete data with all cards, sets, keywords, abilities, and format legality. Updated regularly from official sources.
           </p>
-          <a href="/health" class="text-green-400 hover:text-green-300 font-medium">
+          <a href="/health" class="text-sm font-medium hover:opacity-70 transition-opacity cursor-pointer" style="color: #B45309;">
             Check Status &rarr;
           </a>
         </div>
@@ -154,79 +193,73 @@
   </section>
 
   <!-- Quick Start Section -->
-  <section class="py-20 px-6 bg-gray-900/50">
+  <section class="py-20 md:py-24 px-6 bg-white">
     <div class="max-w-4xl mx-auto">
-      <h2 class="text-3xl font-bold text-center mb-12">Quick Start</h2>
+      <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-12 md:mb-16">Quick Start</h2>
 
       <!-- Tab Navigation -->
-      <div class="flex justify-center mb-8">
-        <div class="inline-flex rounded-lg border border-gray-700 p-1 bg-gray-800/50">
-          <button id="tab-app" onclick="switchTab('app')" class="tab-btn px-6 py-2 rounded-md text-sm font-medium transition-colors bg-purple-600 text-white">
-            I'm building an app
-          </button>
-          <button id="tab-ai" onclick="switchTab('ai')" class="tab-btn px-6 py-2 rounded-md text-sm font-medium transition-colors text-gray-400 hover:text-white">
-            I want this in Claude
-          </button>
-        </div>
+      <div role="tablist" class="flex gap-0 mb-10 border-b border-gray-200">
+        <button id="tab-app" role="tab" aria-selected="true" aria-controls="content-app" onclick="switchTab('app')" class="tab-btn pb-3 px-1 mr-8 text-sm font-medium border-b-2 transition-colors cursor-pointer border-gray-900 text-gray-900">
+          I'm building an app
+        </button>
+        <button id="tab-ai" role="tab" aria-selected="false" aria-controls="content-ai" onclick="switchTab('ai')" class="tab-btn pb-3 px-1 mr-8 text-sm font-medium border-b-2 transition-colors cursor-pointer border-transparent text-gray-400 hover:text-gray-600">
+          I want this in Claude
+        </button>
       </div>
 
       <!-- Tab Content: Building an App -->
-      <div id="content-app" class="tab-content space-y-8">
-        <!-- Docker Quick Start -->
+      <div id="content-app" role="tabpanel" aria-labelledby="tab-app" class="tab-content space-y-8">
         <div>
-          <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <span class="bg-cyan-600 text-xs px-2 py-1 rounded">Docker</span>
+          <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+            <span class="inline-block text-xs font-medium px-2 py-0.5 text-white" style="background: #0891B2;">Docker</span>
             Run locally
           </h3>
-          <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
-            <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
-            <code class="text-sm text-gray-300">
-              <span class="text-green-400">docker</span> run -p 8080:8080 ghcr.io/oleiade/goagain:latest
+          <div class="code-block p-4 overflow-x-auto" style="background: #1E1E1E;">
+            <button class="copy-btn text-gray-400 hover:text-gray-200 text-xs px-2 py-1 cursor-pointer" style="background: #374151;" onclick="copyCode(this)">Copy</button>
+            <code class="text-sm" style="color: #E5E5E5;">
+              <span style="color: #93C5FD;">docker</span> run -p 8080:8080 ghcr.io/oleiade/goagain:latest
             </code>
           </div>
         </div>
 
-        <!-- REST API Example -->
         <div>
-          <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <span class="bg-purple-600 text-xs px-2 py-1 rounded">REST API</span>
+          <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+            <span class="inline-block text-xs font-medium px-2 py-0.5 text-white" style="background: var(--red);">REST API</span>
             Search for cards
           </h3>
-          <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
-            <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
-            <code class="text-sm text-gray-300">
-              <span class="text-green-400">curl</span> <span class="text-yellow-300">"https://api.goagain.dev/v1/cards?name=Strike&class=Warrior&limit=5"</span>
+          <div class="code-block p-4 overflow-x-auto" style="background: #1E1E1E;">
+            <button class="copy-btn text-gray-400 hover:text-gray-200 text-xs px-2 py-1 cursor-pointer" style="background: #374151;" onclick="copyCode(this)">Copy</button>
+            <code class="text-sm" style="color: #E5E5E5;">
+              <span style="color: #93C5FD;">curl</span> <span style="color: #FCD34D;">"https://api.goagain.dev/v1/cards?name=Strike&class=Warrior&limit=5"</span>
             </code>
           </div>
         </div>
 
-        <!-- Get Card Example -->
         <div>
-          <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <span class="bg-purple-600 text-xs px-2 py-1 rounded">REST API</span>
+          <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+            <span class="inline-block text-xs font-medium px-2 py-0.5 text-white" style="background: var(--red);">REST API</span>
             Get card details
           </h3>
-          <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
-            <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
-            <code class="text-sm text-gray-300">
-              <span class="text-green-400">curl</span> <span class="text-yellow-300">"https://api.goagain.dev/v1/cards/enlightened-strike-red"</span>
+          <div class="code-block p-4 overflow-x-auto" style="background: #1E1E1E;">
+            <button class="copy-btn text-gray-400 hover:text-gray-200 text-xs px-2 py-1 cursor-pointer" style="background: #374151;" onclick="copyCode(this)">Copy</button>
+            <code class="text-sm" style="color: #E5E5E5;">
+              <span style="color: #93C5FD;">curl</span> <span style="color: #FCD34D;">"https://api.goagain.dev/v1/cards/enlightened-strike-red"</span>
             </code>
           </div>
         </div>
       </div>
 
       <!-- Tab Content: Using with Claude -->
-      <div id="content-ai" class="tab-content space-y-8 hidden">
-        <!-- MCP Config -->
+      <div id="content-ai" role="tabpanel" aria-labelledby="tab-ai" class="tab-content space-y-8 hidden">
         <div>
-          <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <span class="bg-blue-600 text-xs px-2 py-1 rounded">MCP</span>
+          <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+            <span class="inline-block text-xs font-medium px-2 py-0.5 text-white" style="background: var(--blue);">MCP</span>
             Add to Claude Desktop
           </h3>
-          <p class="text-gray-400 text-sm mb-3">Add this to your Claude Desktop configuration file:</p>
-          <div class="code-block bg-gray-900 rounded-lg p-4 overflow-x-auto border border-gray-800">
-            <button class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2 py-1 rounded" onclick="copyCode(this)">Copy</button>
-            <pre class="text-sm text-gray-300"><code>{
+          <p class="text-gray-500 text-sm mb-3">Add this to your Claude Desktop configuration file:</p>
+          <div class="code-block p-4 overflow-x-auto" style="background: #1E1E1E;">
+            <button class="copy-btn text-gray-400 hover:text-gray-200 text-xs px-2 py-1 cursor-pointer" style="background: #374151;" onclick="copyCode(this)">Copy</button>
+            <pre class="text-sm" style="color: #E5E5E5;"><code>{
   "mcpServers": {
     "flesh-and-blood": {
       "url": "https://mcp.goagain.dev/"
@@ -236,25 +269,24 @@
           </div>
         </div>
 
-        <!-- Example Prompts -->
         <div>
-          <h3 class="text-lg font-semibold mb-3 flex items-center gap-2">
-            <span class="bg-green-600 text-xs px-2 py-1 rounded">Try it</span>
+          <h3 class="text-sm font-semibold mb-3 flex items-center gap-2">
+            <span class="inline-block text-xs font-medium px-2 py-0.5 text-white" style="background: #059669;">Try it</span>
             Example prompts
           </h3>
-          <p class="text-gray-400 text-sm mb-3">Once configured, ask Claude questions like:</p>
+          <p class="text-gray-500 text-sm mb-3">Once configured, ask Claude questions like:</p>
           <ul class="space-y-3">
             <li class="flex items-start gap-3">
-              <span class="text-purple-400 mt-1">&#10145;</span>
-              <span class="text-gray-300">"What Ninja attacks have go again?"</span>
+              <span class="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>
+              <span class="text-gray-600 text-sm">"What Ninja attacks have go again?"</span>
             </li>
             <li class="flex items-start gap-3">
-              <span class="text-purple-400 mt-1">&#10145;</span>
-              <span class="text-gray-300">"Show me all Briar cards legal in Classic Constructed"</span>
+              <span class="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>
+              <span class="text-gray-600 text-sm">"Show me all Briar cards legal in Classic Constructed"</span>
             </li>
             <li class="flex items-start gap-3">
-              <span class="text-purple-400 mt-1">&#10145;</span>
-              <span class="text-gray-300">"Compare Enlightened Strike to Razor Reflex"</span>
+              <span class="mt-2 w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0"></span>
+              <span class="text-gray-600 text-sm">"Compare Enlightened Strike to Razor Reflex"</span>
             </li>
           </ul>
         </div>
@@ -263,65 +295,65 @@
   </section>
 
   <!-- Endpoints Section -->
-  <section class="py-20 px-6">
+  <section class="py-20 md:py-24 px-6">
     <div class="max-w-4xl mx-auto">
-      <h2 class="text-3xl font-bold text-center mb-12">API Endpoints</h2>
+      <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-12 md:mb-16">API Endpoints</h2>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left">
+        <table class="w-full text-left text-sm">
           <thead>
-            <tr class="border-b border-gray-800">
-              <th class="py-3 px-4 text-gray-400 font-medium">Endpoint</th>
-              <th class="py-3 px-4 text-gray-400 font-medium">Description</th>
+            <tr class="border-b border-gray-300">
+              <th class="py-3 pr-6 text-xs font-medium text-gray-400 uppercase tracking-wider">Endpoint</th>
+              <th class="py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Description</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-800">
+          <tbody class="divide-y divide-gray-200">
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/cards</code></td>
-              <td class="py-3 px-4 text-gray-400">Search cards with filters (name, type, class, set, pitch, keyword, q, legal_in)</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /v1/cards</code></td>
+              <td class="py-3 text-gray-500">Search cards with filters (name, type, class, set, pitch, keyword, q, legal_in)</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/cards/{id}</code></td>
-              <td class="py-3 px-4 text-gray-400">Get card by unique ID or name</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /v1/cards/{id}</code></td>
+              <td class="py-3 text-gray-500">Get card by unique ID or name</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/cards/{id}/legality</code></td>
-              <td class="py-3 px-4 text-gray-400">Get card legality across all formats</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /v1/cards/{id}/legality</code></td>
+              <td class="py-3 text-gray-500">Get card legality across all formats</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/sets</code></td>
-              <td class="py-3 px-4 text-gray-400">List all card sets</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /v1/sets</code></td>
+              <td class="py-3 text-gray-500">List all card sets</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/sets/{id}</code></td>
-              <td class="py-3 px-4 text-gray-400">Get set details with cards</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /v1/sets/{id}</code></td>
+              <td class="py-3 text-gray-500">Get set details with cards</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/keywords</code></td>
-              <td class="py-3 px-4 text-gray-400">List all game keywords</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /v1/keywords</code></td>
+              <td class="py-3 text-gray-500">List all game keywords</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/keywords/{name}</code></td>
-              <td class="py-3 px-4 text-gray-400">Get keyword description</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /v1/keywords/{name}</code></td>
+              <td class="py-3 text-gray-500">Get keyword description</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /v1/abilities</code></td>
-              <td class="py-3 px-4 text-gray-400">List all card abilities</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /v1/abilities</code></td>
+              <td class="py-3 text-gray-500">List all card abilities</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /openapi</code></td>
-              <td class="py-3 px-4 text-gray-400">OpenAPI specification (JSON)</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /openapi</code></td>
+              <td class="py-3 text-gray-500">OpenAPI specification (YAML)</td>
             </tr>
             <tr>
-              <td class="py-3 px-4"><code class="text-purple-400">GET /health</code></td>
-              <td class="py-3 px-4 text-gray-400">Health check with data statistics</td>
+              <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--red);">GET /health</code></td>
+              <td class="py-3 text-gray-500">Health check with data statistics</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="text-center mt-8">
-        <a href="/docs" class="text-purple-400 hover:text-purple-300 font-medium">
+      <div class="mt-10">
+        <a href="/docs" class="text-sm font-medium hover:opacity-70 transition-opacity cursor-pointer" style="color: var(--blue);">
           Full API documentation with interactive examples &rarr;
         </a>
       </div>
@@ -329,63 +361,63 @@
   </section>
 
   <!-- MCP Tools Section -->
-  <section class="py-20 px-6 bg-gray-900/50">
+  <section class="py-20 md:py-24 px-6 bg-white">
     <div class="max-w-4xl mx-auto">
-      <h2 class="text-3xl font-bold text-center mb-12">MCP Tools</h2>
-
-      <p class="text-gray-400 text-center mb-8">
+      <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-4">MCP Tools</h2>
+      <p class="text-gray-500 text-sm leading-relaxed mb-10">
         The MCP server provides 9 tools for AI assistants to query Flesh and Blood card data, search by text, check format legality, and more.
       </p>
 
-      <details class="card-gradient rounded-xl border border-gray-800">
-        <summary class="p-6 text-lg font-semibold hover:bg-gray-800/50 rounded-xl transition-colors">
+      <details class="border border-gray-200">
+        <summary class="p-5 text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-3">
+          <span class="details-icon inline-flex items-center justify-center w-5 h-5 border border-gray-300 text-xs select-none"></span>
           View all MCP tools
         </summary>
-        <div class="px-6 pb-6">
+        <div class="px-5 pb-5 border-t border-gray-200">
           <div class="overflow-x-auto">
-            <table class="w-full text-left">
+            <table class="w-full text-left text-sm">
               <thead>
-                <tr class="border-b border-gray-700">
-                  <th class="py-3 px-4 text-gray-400 font-medium">Tool</th>
-                  <th class="py-3 px-4 text-gray-400 font-medium">Description</th>
+                <tr class="border-b border-gray-300">
+                  <th class="py-3 pr-6 text-xs font-medium text-gray-400 uppercase tracking-wider">Tool</th>
+                  <th class="py-3 text-xs font-medium text-gray-400 uppercase tracking-wider">Description</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-700">
+              <tbody class="divide-y divide-gray-200">
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">search_cards</code></td>
-                  <td class="py-3 px-4 text-gray-400">Search cards by name, type, class, keywords, or other attributes</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">search_cards</code></td>
+                  <td class="py-3 text-gray-500">Search cards by name, type, class, keywords, or other attributes</td>
                 </tr>
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">get_card</code></td>
-                  <td class="py-3 px-4 text-gray-400">Get full details of a specific card by unique ID or name</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">get_card</code></td>
+                  <td class="py-3 text-gray-500">Get full details of a specific card by unique ID or name</td>
                 </tr>
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">search_card_text</code></td>
-                  <td class="py-3 px-4 text-gray-400">Search for cards by text in their abilities or effects</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">search_card_text</code></td>
+                  <td class="py-3 text-gray-500">Search for cards by text in their abilities or effects</td>
                 </tr>
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">get_format_legality</code></td>
-                  <td class="py-3 px-4 text-gray-400">Check a card's legality status across all formats</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">get_format_legality</code></td>
+                  <td class="py-3 text-gray-500">Check a card's legality status across all formats</td>
                 </tr>
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">list_sets</code></td>
-                  <td class="py-3 px-4 text-gray-400">List all Flesh and Blood card sets</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">list_sets</code></td>
+                  <td class="py-3 text-gray-500">List all Flesh and Blood card sets</td>
                 </tr>
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">search_sets</code></td>
-                  <td class="py-3 px-4 text-gray-400">Search for sets by name or code</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">search_sets</code></td>
+                  <td class="py-3 text-gray-500">Search for sets by name or code</td>
                 </tr>
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">get_set</code></td>
-                  <td class="py-3 px-4 text-gray-400">Get details of a specific set including its cards</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">get_set</code></td>
+                  <td class="py-3 text-gray-500">Get details of a specific set including its cards</td>
                 </tr>
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">list_keywords</code></td>
-                  <td class="py-3 px-4 text-gray-400">List all game keywords with their explanations</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">list_keywords</code></td>
+                  <td class="py-3 text-gray-500">List all game keywords with their explanations</td>
                 </tr>
                 <tr>
-                  <td class="py-3 px-4"><code class="text-blue-400">get_keyword</code></td>
-                  <td class="py-3 px-4 text-gray-400">Get the description of a specific keyword</td>
+                  <td class="py-3 pr-6 whitespace-nowrap"><code class="font-medium" style="color: var(--blue);">get_keyword</code></td>
+                  <td class="py-3 text-gray-500">Get the description of a specific keyword</td>
                 </tr>
               </tbody>
             </table>
@@ -396,46 +428,42 @@
   </section>
 
   <!-- FAQ Section -->
-  <section class="py-20 px-6" itemscope itemtype="https://schema.org/FAQPage">
+  <section class="py-20 md:py-24 px-6" itemscope itemtype="https://schema.org/FAQPage">
     <div class="max-w-4xl mx-auto">
-      <h2 class="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+      <h2 class="text-2xl md:text-3xl font-bold tracking-tight mb-12 md:mb-16">Frequently Asked Questions</h2>
 
-      <div class="space-y-6">
-        <!-- FAQ 1 -->
-        <div class="card-gradient rounded-xl p-6 border border-gray-800" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="text-lg font-semibold mb-3" itemprop="name">Is there a Flesh and Blood card database API?</h3>
+      <div class="space-y-0 divide-y divide-gray-200">
+        <div class="py-8 first:pt-0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="text-base font-semibold mb-3" itemprop="name">Is there a Flesh and Blood card database API?</h3>
           <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-            <p class="text-gray-400" itemprop="text">
+            <p class="text-gray-500 text-sm leading-relaxed" itemprop="text">
               Yes! goagain provides a free REST API for Flesh and Blood TCG card data. You can search cards, filter by class, type, keywords, and check format legality. No API key or authentication required.
             </p>
           </div>
         </div>
 
-        <!-- FAQ 2 -->
-        <div class="card-gradient rounded-xl p-6 border border-gray-800" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="text-lg font-semibold mb-3" itemprop="name">How do I get FaB card data for my project?</h3>
+        <div class="py-8" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="text-base font-semibold mb-3" itemprop="name">How do I get FaB card data for my project?</h3>
           <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-            <p class="text-gray-400" itemprop="text">
-              Make HTTP requests to api.goagain.dev endpoints. For example, <code class="text-purple-400">GET /v1/cards?class=Ninja</code> returns all Ninja cards. The API supports JSON responses and CORS, so you can call it directly from web apps.
+            <p class="text-gray-500 text-sm leading-relaxed" itemprop="text">
+              Make HTTP requests to api.goagain.dev endpoints. For example, <code class="text-gray-700 bg-gray-100 px-1.5 py-0.5">GET /v1/cards?class=Ninja</code> returns all Ninja cards. The API supports JSON responses and CORS, so you can call it directly from web apps.
             </p>
           </div>
         </div>
 
-        <!-- FAQ 3 -->
-        <div class="card-gradient rounded-xl p-6 border border-gray-800" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="text-lg font-semibold mb-3" itemprop="name">Can I use Claude to look up Flesh and Blood cards?</h3>
+        <div class="py-8" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="text-base font-semibold mb-3" itemprop="name">Can I use Claude to look up Flesh and Blood cards?</h3>
           <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-            <p class="text-gray-400" itemprop="text">
+            <p class="text-gray-500 text-sm leading-relaxed" itemprop="text">
               Yes! goagain includes an MCP server that works with Claude Desktop and other AI assistants. Add the MCP configuration to Claude, then ask questions like "What Ninja attacks have go again?" or "Show me Briar cards legal in CC."
             </p>
           </div>
         </div>
 
-        <!-- FAQ 4 -->
-        <div class="card-gradient rounded-xl p-6 border border-gray-800" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
-          <h3 class="text-lg font-semibold mb-3" itemprop="name">Does this API require authentication?</h3>
+        <div class="py-8 last:pb-0" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+          <h3 class="text-base font-semibold mb-3" itemprop="name">Does this API require authentication?</h3>
           <div itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer">
-            <p class="text-gray-400" itemprop="text">
+            <p class="text-gray-500 text-sm leading-relaxed" itemprop="text">
               No authentication required. The API is free and open for everyone. Rate limiting is applied to ensure fair usage, but there are no API keys or signup needed to start querying card data.
             </p>
           </div>
@@ -445,35 +473,39 @@
   </section>
 
   <!-- Footer -->
-  <footer class="py-12 px-6 border-t border-gray-800">
-    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-      <div class="text-gray-500 text-sm">
-        Card data from <a href="https://github.com/the-fab-cube/flesh-and-blood-cards" class="text-gray-400 hover:text-white">the-fab-cube</a>.
+  <footer class="border-t border-gray-200">
+    <div class="color-strip" aria-hidden="true">
+      <div class="flex-1" style="background: var(--red);"></div>
+      <div class="flex-1" style="background: var(--yellow);"></div>
+      <div class="flex-1" style="background: var(--blue);"></div>
+    </div>
+    <div class="max-w-5xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div class="text-gray-500 text-xs leading-relaxed">
+        Card data from <a href="https://github.com/the-fab-cube/flesh-and-blood-cards" class="text-gray-600 hover:text-gray-900 transition-colors">the-fab-cube</a>.
         Not affiliated with Legend Story Studios.
       </div>
-      <div class="flex gap-6 text-sm">
-        <a href="/docs" class="text-gray-400 hover:text-white">API Docs</a>
-        <a href="/openapi.yaml" class="text-gray-400 hover:text-white">OpenAPI Spec</a>
-        <a href="https://github.com/oleiade/goagain" class="text-gray-400 hover:text-white">GitHub</a>
+      <div class="flex gap-6 text-xs font-medium">
+        <a href="/docs" class="text-gray-500 hover:text-gray-900 transition-colors cursor-pointer">API Docs</a>
+        <a href="/openapi.yaml" class="text-gray-500 hover:text-gray-900 transition-colors cursor-pointer">OpenAPI Spec</a>
+        <a href="https://github.com/oleiade/goagain" class="text-gray-500 hover:text-gray-900 transition-colors cursor-pointer">GitHub</a>
       </div>
     </div>
   </footer>
 
   <!-- Scripts -->
   <script>
-    // Tab switching functionality
     function switchTab(tab) {
-      // Update tab buttons
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('bg-purple-600', 'text-white');
-        btn.classList.add('text-gray-400', 'hover:text-white');
+        btn.classList.remove('border-gray-900', 'text-gray-900');
+        btn.classList.add('border-transparent', 'text-gray-400', 'hover:text-gray-600');
+        btn.setAttribute('aria-selected', 'false');
       });
 
       const activeBtn = document.getElementById('tab-' + tab);
-      activeBtn.classList.remove('text-gray-400', 'hover:text-white');
-      activeBtn.classList.add('bg-purple-600', 'text-white');
+      activeBtn.classList.remove('border-transparent', 'text-gray-400', 'hover:text-gray-600');
+      activeBtn.classList.add('border-gray-900', 'text-gray-900');
+      activeBtn.setAttribute('aria-selected', 'true');
 
-      // Update tab content
       document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.add('hidden');
       });
@@ -481,7 +513,6 @@
       document.getElementById('content-' + tab).classList.remove('hidden');
     }
 
-    // Copy to clipboard functionality
     function copyCode(button) {
       const codeBlock = button.parentElement;
       const code = codeBlock.querySelector('code');
