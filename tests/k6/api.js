@@ -126,8 +126,9 @@ export function functionalTests(data) {
 
       const legality = legalityRes.json();
       expect(legality).toBeDefined();
-      // Should be an array of format legalities
-      expect(Array.isArray(legality)).toBe(true);
+      expect(legality.card_id).toBe(cardId);
+      expect(legality.legalities).toBeDefined();
+      expect(Array.isArray(legality.legalities)).toBe(true);
     }
   });
 
