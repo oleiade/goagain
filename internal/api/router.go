@@ -62,7 +62,8 @@ func LoadConfig() Config {
 			cidr = strings.TrimSpace(cidr)
 			_, ipNet, err := net.ParseCIDR(cidr)
 			if err != nil {
-				slog.Warn("Invalid CIDR in TRUSTED_PROXIES", slog.String("cidr", cidr))
+				sanitized := strings.ReplaceAll(strings.ReplaceAll(cidr, "\n", ""), "\r", "")
+				slog.Warn("Invalid CIDR in TRUSTED_PROXIES", slog.String("cidr", sanitized))
 				continue
 			}
 			config.TrustedProxies = append(config.TrustedProxies, ipNet)
