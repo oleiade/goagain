@@ -232,6 +232,9 @@ func (h *Handler) GetSet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cards := h.store.GetCardsInSet(id)
+	if cards == nil {
+		cards = []*domain.Card{}
+	}
 
 	writeJSON(w, http.StatusOK, SetWithCards{
 		Set:   set,
