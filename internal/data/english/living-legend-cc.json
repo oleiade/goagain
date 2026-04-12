@@ -246,5 +246,21 @@
         "date_announced": "2025-12-16T00:00:00.000Z",
         "date_in_effect": "2025-12-19T00:00:00.000Z",
         "legality_article": "https://fabtcg.com/articles/living-legend-kano-dracai-of-aether/"
+    },
+    {
+        "unique_id": "wqQj8kDJJJcM6wdrNNHFF",
+        "card_unique_id": "hjMQGwKgDTh8LzFdnk8Rg",
+        "status_active": true,
+        "date_announced": "2026-01-20T00:00:00.000Z",
+        "date_in_effect": "2026-01-23T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/living-legend-florian-rotwood-harbinger/"
+    },
+    {
+        "unique_id": "whr6CphHKwczCPGtJLW8J",
+        "card_unique_id": "HmQ8dbfPL8BLMkJDGGGm8",
+        "status_active": true,
+        "date_announced": "2026-01-20T00:00:00.000Z",
+        "date_in_effect": "2026-01-23T00:00:00.000Z",
+        "legality_article": "https://fabtcg.com/articles/living-legend-florian-rotwood-harbinger/"
     }
 ]
