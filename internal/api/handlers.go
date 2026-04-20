@@ -311,6 +311,24 @@ Content-Signal: ai-train=no, search=yes, ai-input=yes
 `, h.apiBaseURL)
 }
 
+// APICatalog serves the API catalog (RFC 9727) as application/linkset+json.
+func (h *Handler) APICatalog(w http.ResponseWriter, r *http.Request) {
+	catalog := map[string]any{
+		"linkset": []map[string]any{
+			{
+				"anchor":       h.apiBaseURL + "/",
+				"service-desc": []map[string]string{{"href": h.apiBaseURL + "/openapi.yaml", "type": "application/yaml"}},
+				"service-doc":  []map[string]string{{"href": h.apiBaseURL + "/docs"}},
+				"status":       []map[string]string{{"href": h.apiBaseURL + "/health"}},
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/linkset+json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(catalog)
+}
+
 // SitemapXML serves a sitemap.xml listing canonical URLs for all public endpoints.
 func (h *Handler) SitemapXML(w http.ResponseWriter, r *http.Request) {
 	urls := []string{

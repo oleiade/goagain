@@ -508,6 +508,33 @@ function testListAbilities() {
   });
 }
 
+function testAPICatalog() {
+  group("API Catalog", () => {
+    const res = http.get(`${BASE_URL}/.well-known/api-catalog`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /.well-known/api-catalog returns 200": (r) => r.status === 200,
+      "api-catalog content-type is linkset+json": (r) =>
+        r.headers["Content-Type"].includes("application/linkset+json"),
+      "api-catalog has linkset array": () =>
+        Array.isArray(body.linkset) && body.linkset.length > 0,
+      "api-catalog entry has anchor": () =>
+        typeof body.linkset[0].anchor === "string",
+      "api-catalog entry has service-desc": () =>
+        Array.isArray(body.linkset[0]["service-desc"]) &&
+        body.linkset[0]["service-desc"][0].href.includes("/openapi.yaml"),
+      "api-catalog entry has service-doc": () =>
+        Array.isArray(body.linkset[0]["service-doc"]) &&
+        body.linkset[0]["service-doc"][0].href.includes("/docs"),
+      "api-catalog entry has status": () =>
+        Array.isArray(body.linkset[0]["status"]) &&
+        body.linkset[0]["status"][0].href.includes("/health"),
+    });
+    errorRate.add(!ok);
+  });
+}
+
 function testSitemapXml() {
   group("Sitemap XML", () => {
     const res = http.get(`${BASE_URL}/sitemap.xml`);
@@ -599,6 +626,7 @@ export default function () {
   testListKeywords();
   testGetKeyword();
   testListAbilities();
+  testAPICatalog();
   testSitemapXml();
   testRobotsTxt();
   testContentType();
