@@ -311,6 +311,49 @@ Content-Signal: ai-train=no, search=yes, ai-input=yes
 `, h.apiBaseURL)
 }
 
+// AgentSkillsIndex serves the agent skills discovery index.
+func (h *Handler) AgentSkillsIndex(w http.ResponseWriter, r *http.Request) {
+	index := map[string]any{
+		"$schema": "https://agentskills.io/schema/v0.2.0/index.json",
+		"skills": []map[string]string{
+			{
+				"name":        "api-catalog",
+				"type":        "api-catalog",
+				"description": "API catalog for automated discovery (RFC 9727)",
+				"url":         h.apiBaseURL + "/.well-known/api-catalog",
+			},
+			{
+				"name":        "mcp-server-card",
+				"type":        "mcp-server-card",
+				"description": "MCP Server Card for agent tool discovery",
+				"url":         h.apiBaseURL + "/.well-known/mcp/server-card.json",
+			},
+			{
+				"name":        "sitemap",
+				"type":        "sitemap",
+				"description": "XML sitemap with canonical URLs",
+				"url":         h.apiBaseURL + "/sitemap.xml",
+			},
+			{
+				"name":        "robots-txt",
+				"type":        "robots-txt",
+				"description": "Robots.txt with AI crawler rules and Content Signals",
+				"url":         h.apiBaseURL + "/robots.txt",
+			},
+			{
+				"name":        "openapi",
+				"type":        "openapi",
+				"description": "OpenAPI 3.0 specification for the REST API",
+				"url":         h.apiBaseURL + "/openapi.yaml",
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(index)
+}
+
 // MCPServerCard serves the MCP Server Card for agent discovery (SEP-1649).
 func (h *Handler) MCPServerCard(w http.ResponseWriter, r *http.Request) {
 	card := map[string]any{

@@ -508,6 +508,36 @@ function testListAbilities() {
   });
 }
 
+function testAgentSkillsIndex() {
+  group("Agent Skills Index", () => {
+    const res = http.get(`${BASE_URL}/.well-known/agent-skills/index.json`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /.well-known/agent-skills/index.json returns 200": (r) =>
+        r.status === 200,
+      "agent-skills content-type is json": (r) =>
+        r.headers["Content-Type"].includes("application/json"),
+      "agent-skills has $schema": () => typeof body.$schema === "string",
+      "agent-skills has skills array": () =>
+        Array.isArray(body.skills) && body.skills.length > 0,
+      "agent-skills has api-catalog skill": () =>
+        body.skills.some((s) => s.name === "api-catalog"),
+      "agent-skills has mcp-server-card skill": () =>
+        body.skills.some((s) => s.name === "mcp-server-card"),
+      "agent-skills has sitemap skill": () =>
+        body.skills.some((s) => s.name === "sitemap"),
+      "agent-skills has openapi skill": () =>
+        body.skills.some((s) => s.name === "openapi"),
+      "each skill has required fields": () =>
+        body.skills.every(
+          (s) => s.name && s.type && s.description && s.url
+        ),
+    });
+    errorRate.add(!ok);
+  });
+}
+
 function testMCPServerCard() {
   group("MCP Server Card", () => {
     const res = http.get(`${BASE_URL}/.well-known/mcp/server-card.json`);
@@ -653,6 +683,7 @@ export default function () {
   testListKeywords();
   testGetKeyword();
   testListAbilities();
+  testAgentSkillsIndex();
   testMCPServerCard();
   testAPICatalog();
   testSitemapXml();
