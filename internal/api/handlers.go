@@ -84,6 +84,11 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Add Link headers for agent discovery (RFC 8288)
+	w.Header().Add("Link", `</.well-known/api-catalog>; rel="api-catalog"`)
+	w.Header().Add("Link", `</docs>; rel="service-doc"`)
+	w.Header().Add("Link", `</openapi.yaml>; rel="service-desc"`)
+
 	// Check if client wants JSON
 	accept := r.Header.Get("Accept")
 	if strings.Contains(accept, "application/json") {

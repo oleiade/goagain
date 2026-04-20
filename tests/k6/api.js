@@ -87,6 +87,21 @@ function testIndex() {
       "index has endpoints map": () =>
         typeof body.endpoints === "object" && body.endpoints !== null,
       "index has stats": () => hasFields(body, ["stats"]),
+      "index has Link header with api-catalog": (r) => {
+        const links = r.headers["Link"];
+        if (!links) return false;
+        return links.includes('rel="api-catalog"');
+      },
+      "index has Link header with service-doc": (r) => {
+        const links = r.headers["Link"];
+        if (!links) return false;
+        return links.includes('rel="service-doc"');
+      },
+      "index has Link header with service-desc": (r) => {
+        const links = r.headers["Link"];
+        if (!links) return false;
+        return links.includes('rel="service-desc"');
+      },
     });
     errorRate.add(!ok);
   });
