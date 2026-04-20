@@ -311,6 +311,28 @@ Content-Signal: ai-train=no, search=yes, ai-input=yes
 `, h.apiBaseURL)
 }
 
+// MCPServerCard serves the MCP Server Card for agent discovery (SEP-1649).
+func (h *Handler) MCPServerCard(w http.ResponseWriter, r *http.Request) {
+	card := map[string]any{
+		"serverInfo": map[string]string{
+			"name":        "goagain-mcp",
+			"version":     "1.0.0",
+			"description": "Flesh and Blood card game data MCP server",
+		},
+		"transport": map[string]string{
+			"type": "http",
+			"url":  h.mcpBaseURL + "/",
+		},
+		"capabilities": map[string]bool{
+			"tools": true,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(card)
+}
+
 // APICatalog serves the API catalog (RFC 9727) as application/linkset+json.
 func (h *Handler) APICatalog(w http.ResponseWriter, r *http.Request) {
 	catalog := map[string]any{

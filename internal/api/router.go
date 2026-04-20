@@ -95,6 +95,7 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	mux.HandleFunc("GET /robots.txt", h.RobotsTxt)
 	mux.HandleFunc("GET /sitemap.xml", h.SitemapXML)
 	mux.HandleFunc("GET /.well-known/api-catalog", h.APICatalog)
+	mux.HandleFunc("GET /.well-known/mcp/server-card.json", h.MCPServerCard)
 
 	// Operational endpoints (unversioned)
 	mux.HandleFunc("GET /health", h.Health)

@@ -508,6 +508,33 @@ function testListAbilities() {
   });
 }
 
+function testMCPServerCard() {
+  group("MCP Server Card", () => {
+    const res = http.get(`${BASE_URL}/.well-known/mcp/server-card.json`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /.well-known/mcp/server-card.json returns 200": (r) =>
+        r.status === 200,
+      "mcp-card content-type is json": (r) =>
+        r.headers["Content-Type"].includes("application/json"),
+      "mcp-card has serverInfo.name": () =>
+        body.serverInfo && body.serverInfo.name === "goagain-mcp",
+      "mcp-card has serverInfo.version": () =>
+        body.serverInfo && typeof body.serverInfo.version === "string",
+      "mcp-card has serverInfo.description": () =>
+        body.serverInfo && typeof body.serverInfo.description === "string",
+      "mcp-card has transport.type": () =>
+        body.transport && body.transport.type === "http",
+      "mcp-card has transport.url": () =>
+        body.transport && typeof body.transport.url === "string",
+      "mcp-card has capabilities.tools": () =>
+        body.capabilities && body.capabilities.tools === true,
+    });
+    errorRate.add(!ok);
+  });
+}
+
 function testAPICatalog() {
   group("API Catalog", () => {
     const res = http.get(`${BASE_URL}/.well-known/api-catalog`);
@@ -626,6 +653,7 @@ export default function () {
   testListKeywords();
   testGetKeyword();
   testListAbilities();
+  testMCPServerCard();
   testAPICatalog();
   testSitemapXml();
   testRobotsTxt();
