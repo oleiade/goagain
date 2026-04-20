@@ -93,6 +93,7 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 
 	// Agent discovery endpoints
 	mux.HandleFunc("GET /robots.txt", h.RobotsTxt)
+	mux.HandleFunc("GET /sitemap.xml", h.SitemapXML)
 
 	// Operational endpoints (unversioned)
 	mux.HandleFunc("GET /health", h.Health)

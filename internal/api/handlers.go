@@ -306,6 +306,29 @@ Content-Signal: ai-train=no, search=yes, ai-input=yes
 `, h.apiBaseURL)
 }
 
+// SitemapXML serves a sitemap.xml listing canonical URLs for all public endpoints.
+func (h *Handler) SitemapXML(w http.ResponseWriter, r *http.Request) {
+	urls := []string{
+		"/",
+		"/docs",
+		"/openapi.yaml",
+		"/health",
+		"/v1/cards",
+		"/v1/sets",
+		"/v1/keywords",
+		"/v1/abilities",
+	}
+
+	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+	_, _ = fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+`)
+	for _, u := range urls {
+		_, _ = fmt.Fprintf(w, "  <url>\n    <loc>%s%s</loc>\n  </url>\n", h.apiBaseURL, u)
+	}
+	_, _ = fmt.Fprint(w, "</urlset>\n")
+}
+
 // GetCardLegality returns legality info for a card across all formats.
 func (h *Handler) GetCardLegality(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")

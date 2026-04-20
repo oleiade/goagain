@@ -493,6 +493,31 @@ function testListAbilities() {
   });
 }
 
+function testSitemapXml() {
+  group("Sitemap XML", () => {
+    const res = http.get(`${BASE_URL}/sitemap.xml`);
+
+    const ok = check(res, {
+      "GET /sitemap.xml returns 200": (r) => r.status === 200,
+      "sitemap content-type is xml": (r) =>
+        r.headers["Content-Type"].includes("application/xml"),
+      "sitemap has urlset root": (r) => r.body.includes("<urlset"),
+      "sitemap has homepage loc": (r) =>
+        r.body.includes("<loc>") && r.body.includes("</loc>"),
+      "sitemap has /docs": (r) => r.body.includes("/docs</loc>"),
+      "sitemap has /openapi.yaml": (r) =>
+        r.body.includes("/openapi.yaml</loc>"),
+      "sitemap has /v1/cards": (r) => r.body.includes("/v1/cards</loc>"),
+      "sitemap has /v1/sets": (r) => r.body.includes("/v1/sets</loc>"),
+      "sitemap has /v1/keywords": (r) =>
+        r.body.includes("/v1/keywords</loc>"),
+      "sitemap has /v1/abilities": (r) =>
+        r.body.includes("/v1/abilities</loc>"),
+    });
+    errorRate.add(!ok);
+  });
+}
+
 function testRobotsTxt() {
   group("Robots.txt", () => {
     const res = http.get(`${BASE_URL}/robots.txt`);
@@ -559,6 +584,7 @@ export default function () {
   testListKeywords();
   testGetKeyword();
   testListAbilities();
+  testSitemapXml();
   testRobotsTxt();
   testContentType();
 
