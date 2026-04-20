@@ -3,6 +3,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -267,6 +268,42 @@ func (h *Handler) GetKeyword(w http.ResponseWriter, r *http.Request) {
 // ListAbilities returns all abilities.
 func (h *Handler) ListAbilities(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, h.store.Abilities)
+}
+
+// RobotsTxt serves the robots.txt file with AI crawler rules and Content Signals.
+func (h *Handler) RobotsTxt(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, _ = fmt.Fprintf(w, `# Robots.txt for goagain API
+# https://www.rfc-editor.org/rfc/rfc9309
+
+User-agent: *
+Allow: /
+
+# AI crawlers: allow access, disallow training
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+Sitemap: %s/sitemap.xml
+
+# Content Signals (https://contentsignals.org/)
+# https://datatracker.ietf.org/doc/draft-romm-aipref-contentsignals/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+`, h.apiBaseURL)
 }
 
 // GetCardLegality returns legality info for a card across all formats.

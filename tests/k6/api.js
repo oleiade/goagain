@@ -493,6 +493,34 @@ function testListAbilities() {
   });
 }
 
+function testRobotsTxt() {
+  group("Robots.txt", () => {
+    const res = http.get(`${BASE_URL}/robots.txt`);
+
+    const ok = check(res, {
+      "GET /robots.txt returns 200": (r) => r.status === 200,
+      "robots.txt content-type is text/plain": (r) =>
+        r.headers["Content-Type"].includes("text/plain"),
+      "robots.txt has wildcard user-agent": (r) =>
+        r.body.includes("User-agent: *"),
+      "robots.txt has GPTBot rules": (r) =>
+        r.body.includes("User-agent: GPTBot"),
+      "robots.txt has Claude-Web rules": (r) =>
+        r.body.includes("User-agent: Claude-Web"),
+      "robots.txt has Google-Extended rules": (r) =>
+        r.body.includes("User-agent: Google-Extended"),
+      "robots.txt has Sitemap directive": (r) =>
+        r.body.includes("Sitemap:") && r.body.includes("/sitemap.xml"),
+      "robots.txt has Content-Signal directive": (r) =>
+        r.body.includes("Content-Signal:") &&
+        r.body.includes("ai-train=no") &&
+        r.body.includes("search=yes") &&
+        r.body.includes("ai-input=yes"),
+    });
+    errorRate.add(!ok);
+  });
+}
+
 function testContentType() {
   group("Content-Type headers", () => {
     const endpoints = [
@@ -531,6 +559,7 @@ export default function () {
   testListKeywords();
   testGetKeyword();
   testListAbilities();
+  testRobotsTxt();
   testContentType();
 
   sleep(1);

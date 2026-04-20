@@ -91,6 +91,9 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	// Root - Landing page / API info (unversioned)
 	mux.HandleFunc("GET /", h.Index)
 
+	// Agent discovery endpoints
+	mux.HandleFunc("GET /robots.txt", h.RobotsTxt)
+
 	// Operational endpoints (unversioned)
 	mux.HandleFunc("GET /health", h.Health)
 	mux.HandleFunc("GET /openapi.yaml", serveOpenAPI)
