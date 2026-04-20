@@ -89,8 +89,19 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Link", `</docs>; rel="service-doc"`)
 	w.Header().Add("Link", `</openapi.yaml>; rel="service-desc"`)
 
-	// Check if client wants JSON
+	// Check Accept header for content negotiation
 	accept := r.Header.Get("Accept")
+
+	// Serve markdown for agents requesting it
+	if strings.Contains(accept, "text/markdown") {
+		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+		md := string(landingMarkdown)
+		md = strings.ReplaceAll(md, "https://api.goagain.dev", h.apiBaseURL)
+		md = strings.ReplaceAll(md, "https://mcp.goagain.dev", h.mcpBaseURL)
+		_, _ = w.Write([]byte(md))
+		return
+	}
+
 	if strings.Contains(accept, "application/json") {
 		dataStats, _ := h.store.Stats()
 		info := map[string]any{

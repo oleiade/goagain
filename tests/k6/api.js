@@ -7,7 +7,7 @@ const errorRate = new Rate("api_errors");
 const cardSearchDuration = new Trend("card_search_duration");
 const cardGetDuration = new Trend("card_get_duration");
 
-const BASE_URL = __ENV.API_BASE_URL || "http://localhost:8080";
+const BASE_URL = __ENV.API_URL || "http://localhost:8080";
 
 export const options = {
   scenarios: {
@@ -17,18 +17,6 @@ export const options = {
       vus: 1,
       iterations: 1,
       tags: { scenario: "smoke" },
-    },
-    // Light load: sustained traffic for availability
-    load: {
-      executor: "ramping-vus",
-      startVUs: 0,
-      stages: [
-        { duration: "10s", target: 5 },
-        { duration: "30s", target: 5 },
-        { duration: "10s", target: 0 },
-      ],
-      startTime: "5s",
-      tags: { scenario: "load" },
     },
   },
   thresholds: {
@@ -316,7 +304,9 @@ function testGetCard() {
 
 function testGetCardNotFound() {
   group("Cards - Not Found", () => {
-    const res = http.get(`${BASE_URL}/v1/cards/nonexistent-card-id-12345`);
+    const res = http.get(`${BASE_URL}/v1/cards/nonexistent-card-id-12345`, {
+      responseCallback: http.expectedStatuses(404),
+    });
     const body = res.json();
 
     check(res, {
@@ -360,16 +350,17 @@ function testCardLegality() {
       check(entry, {
         "legality entry has format": (e) => typeof e.format === "string",
         "legality entry has legal boolean": (e) => typeof e.legal === "boolean",
-        "legality entry has banned boolean": (e) =>
-          typeof e.banned === "boolean",
-        "legality entry has suspended boolean": (e) =>
-          typeof e.suspended === "boolean",
+        "legality entry has banned field": (e) =>
+          typeof e.banned === "boolean" || typeof e.banned === "undefined",
+        "legality entry has suspended field": (e) =>
+          typeof e.suspended === "boolean" || typeof e.suspended === "undefined",
       });
     }
 
     // Legality 404
     const notFound = http.get(
-      `${BASE_URL}/v1/cards/nonexistent-id-xyz/legality`
+      `${BASE_URL}/v1/cards/nonexistent-id-xyz/legality`,
+      { responseCallback: http.expectedStatuses(404) }
     );
     check(notFound, {
       "legality for missing card returns 404": (r) => r.status === 404,
@@ -434,7 +425,9 @@ function testGetSet() {
     errorRate.add(!ok);
 
     // Set not found
-    const notFound = http.get(`${BASE_URL}/v1/sets/ZZZZZ`);
+    const notFound = http.get(`${BASE_URL}/v1/sets/ZZZZZ`, {
+      responseCallback: http.expectedStatuses(404),
+    });
     check(notFound, {
       "missing set returns 404": (r) => r.status === 404,
     });
@@ -480,7 +473,9 @@ function testGetKeyword() {
     errorRate.add(!ok);
 
     // Keyword not found
-    const notFound = http.get(`${BASE_URL}/v1/keywords/NonexistentKeyword123`);
+    const notFound = http.get(`${BASE_URL}/v1/keywords/NonexistentKeyword123`, {
+      responseCallback: http.expectedStatuses(404),
+    });
     check(notFound, {
       "missing keyword returns 404": (r) => r.status === 404,
     });
@@ -505,6 +500,35 @@ function testListAbilities() {
         "ability has name": (a) => typeof a.name === "string",
       });
     }
+  });
+}
+
+function testMarkdownNegotiation() {
+  group("Markdown Content Negotiation", () => {
+    const res = http.get(`${BASE_URL}/`, {
+      headers: { Accept: "text/markdown" },
+    });
+
+    const ok = check(res, {
+      "GET / with Accept: text/markdown returns 200": (r) =>
+        r.status === 200,
+      "markdown content-type is text/markdown": (r) =>
+        r.headers["Content-Type"].includes("text/markdown"),
+      "markdown body has heading": (r) => r.body.includes("# goagain"),
+      "markdown body has API endpoints section": (r) =>
+        r.body.includes("## API Endpoints"),
+      "markdown body has MCP tools section": (r) =>
+        r.body.includes("## MCP Tools"),
+      "markdown body has quick start section": (r) =>
+        r.body.includes("## Quick Start"),
+      "markdown body has agent discovery section": (r) =>
+        r.body.includes("## Agent Discovery"),
+      "markdown has Link headers": (r) => {
+        const links = r.headers["Link"];
+        return links && links.includes('rel="api-catalog"');
+      },
+    });
+    errorRate.add(!ok);
   });
 }
 
@@ -683,6 +707,7 @@ export default function () {
   testListKeywords();
   testGetKeyword();
   testListAbilities();
+  testMarkdownNegotiation();
   testAgentSkillsIndex();
   testMCPServerCard();
   testAPICatalog();

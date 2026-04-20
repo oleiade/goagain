@@ -23,6 +23,9 @@ var openAPISpec []byte
 //go:embed landing.html
 var landingPage []byte
 
+//go:embed landing.md
+var landingMarkdown []byte
+
 //go:embed static/tailwind.min.css
 var tailwindCSS []byte
 
