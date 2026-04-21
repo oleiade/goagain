@@ -44,7 +44,7 @@ type Metrics struct {
 // NewMetrics creates and registers all OpenTelemetry metrics.
 func NewMetrics(serviceName string) *Metrics {
 	meter := otel.Meter(meterName,
-		metric.WithInstrumentationVersion("0.1.0"),
+		metric.WithInstrumentationVersion(Version),
 	)
 
 	m := &Metrics{

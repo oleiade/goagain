@@ -22,6 +22,11 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
+// Version is the application version, set at build time via ldflags:
+//
+//	-ldflags "-X github.com/oleiade/goagain/internal/observability.Version=0.7.0"
+var Version = "dev"
+
 // OTelConfig holds OpenTelemetry configuration.
 type OTelConfig struct {
 	ServiceName    string
@@ -41,7 +46,7 @@ type OTelConfig struct {
 func LoadOTelConfig(serviceName string) OTelConfig {
 	config := OTelConfig{
 		ServiceName:       serviceName,
-		ServiceVersion:    "0.1.0",
+		ServiceVersion:    Version,
 		Environment:       "development",
 		MetricInterval:    30 * time.Second,
 		TraceBatchTimeout: 5 * time.Second,
