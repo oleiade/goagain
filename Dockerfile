@@ -10,9 +10,12 @@ RUN go mod download
 # Copy source code
 COPY . .
 
+# Version is injected at build time from the git tag
+ARG VERSION=dev
+
 # Build both binaries
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /goagain-api ./cmd/api
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /goagain-mcp ./cmd/mcp
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X github.com/oleiade/goagain/internal/observability.Version=${VERSION}" -o /goagain-api ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X github.com/oleiade/goagain/internal/observability.Version=${VERSION}" -o /goagain-mcp ./cmd/mcp
 
 # Runtime stage for API
 FROM alpine:3.19 AS api
@@ -32,7 +35,7 @@ LABEL io.goagain.env.PORT="API server port (default: 8080)" \
 # OpenTelemetry configuration
 LABEL io.goagain.otel.OTEL_EXPORTER_OTLP_ENDPOINT="OTLP endpoint (e.g., localhost:4318). If unset, telemetry goes to stdout" \
       io.goagain.otel.OTEL_SERVICE_NAME="Service name for traces/metrics/logs (default: goagain-api)" \
-      io.goagain.otel.OTEL_SERVICE_VERSION="Service version (default: 0.1.0)" \
+      io.goagain.otel.OTEL_SERVICE_VERSION="Service version (default: set from git tag at build time)" \
       io.goagain.otel.OTEL_ENVIRONMENT="Deployment environment (default: development)"
 
 RUN apk --no-cache add ca-certificates wget && \
@@ -67,7 +70,7 @@ LABEL io.goagain.env.MCP_MODE="Transport mode: stdio or http (default: stdio)" \
 # OpenTelemetry configuration
 LABEL io.goagain.otel.OTEL_EXPORTER_OTLP_ENDPOINT="OTLP endpoint (e.g., localhost:4318). If unset, telemetry goes to stdout" \
       io.goagain.otel.OTEL_SERVICE_NAME="Service name for traces/metrics/logs (default: goagain-mcp)" \
-      io.goagain.otel.OTEL_SERVICE_VERSION="Service version (default: 0.1.0)" \
+      io.goagain.otel.OTEL_SERVICE_VERSION="Service version (default: set from git tag at build time)" \
       io.goagain.otel.OTEL_ENVIRONMENT="Deployment environment (default: development)"
 
 RUN apk --no-cache add ca-certificates wget && \
