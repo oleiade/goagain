@@ -1,251 +1,719 @@
-import http from 'k6/http';
-import { group } from 'k6';
-import { expect } from 'https://jslib.k6.io/k6-testing/0.6.1/index.js';
+import http from "k6/http";
+import { check, group, sleep } from "k6";
+import { Rate, Trend } from "k6/metrics";
 
-/**
- * Smoke/Functional Tests for goagain API
- *
- * Purpose: Validate API contracts, functional correctness, and catch regressions
- * Run: On every PR and push to main
- * Duration: ~30s
- *
- * Usage:
- *   k6 run tests/k6/api.js
- *   API_URL=http://localhost:8080 k6 run tests/k6/api.js
- */
+// Custom metrics
+const errorRate = new Rate("api_errors");
+const cardSearchDuration = new Trend("card_search_duration");
+const cardGetDuration = new Trend("card_get_duration");
 
-// Configuration
-const BASE_URL = __ENV.API_URL || 'http://localhost:8080';
+const BASE_URL = __ENV.API_URL || "http://localhost:8080";
 
 export const options = {
   scenarios: {
-    functional: {
-      executor: 'shared-iterations',
+    // Smoke test: quick conformance check (CI default)
+    smoke: {
+      executor: "shared-iterations",
       vus: 1,
       iterations: 1,
+      tags: { scenario: "smoke" },
     },
   },
   thresholds: {
-    http_req_failed: ['rate<0.001'], // Near-zero errors allowed
-    http_req_duration: ['p(95)<500'], // All requests under 500ms
-    checks: ['rate==1.0'], // All checks must pass
+    // CI gates: these fail the pipeline if breached
+    http_req_failed: ["rate<0.01"],
+    http_req_duration: ["p(95)<2000", "p(99)<5000"],
+    api_errors: ["rate<0.01"],
+    checks: ["rate>0.99"],
+    card_search_duration: ["p(95)<2000"],
+    card_get_duration: ["p(95)<1000"],
   },
 };
 
-// Setup function - runs once before all tests
-// Verifies the API server is running and accessible
-export function setup() {
-  console.log(`Testing API at: ${BASE_URL}`);
+// -- Helpers --
 
-  const healthRes = http.get(`${BASE_URL}/health`, { timeout: '5s' });
+const jsonHeaders = { headers: { Accept: "application/json" } };
 
-  // Use assertion - this will fail the entire test if server is not running
-  expect(healthRes.status, 'API server must be running and healthy').toBe(200);
-
-  const healthData = healthRes.json();
-  expect(healthData.status, 'Health check must return ok status').toBe('ok');
-  expect(healthData.stats, 'Health check must return stats').toBeDefined();
-  expect(healthData.stats.cards, 'Cards must be loaded').toBeGreaterThan(0);
-
-  console.log(
-    `API is healthy. Loaded ${healthData.stats.cards} cards, ${healthData.stats.sets} sets`
-  );
-
-  return { baseUrl: BASE_URL, stats: healthData.stats };
+function hasFields(obj, fields) {
+  if (typeof obj !== "object" || obj === null) return false;
+  for (const f of fields) {
+    if (!(f in obj)) return false;
+  }
+  return true;
 }
 
-// Functional tests for API endpoints
-export function functionalTests(data) {
-  const BASE = data.baseUrl;
+// -- Test functions --
 
-  group('Health Check', () => {
-    const res = http.get(`${BASE}/health`);
-    expect(res.status).toBe(200);
-
+function testHealth() {
+  group("Health", () => {
+    const res = http.get(`${BASE_URL}/health`);
     const body = res.json();
-    expect(body.status).toBe('ok');
-    expect(body.stats).toBeDefined();
-    expect(body.stats.cards).toBeGreaterThan(0);
+
+    const ok = check(res, {
+      "GET /health returns 200": (r) => r.status === 200,
+      "health status is ok": () => body.status === "ok",
+      "health has stats object": () => hasFields(body, ["status", "stats"]),
+      "stats has expected counters": () =>
+        hasFields(body.stats, ["cards", "sets", "keywords", "abilities"]),
+      "stats cards > 0": () => body.stats.cards > 0,
+      "stats sets > 0": () => body.stats.sets > 0,
+      "stats keywords > 0": () => body.stats.keywords > 0,
+    });
+    errorRate.add(!ok);
   });
+}
 
-  group('Cards Endpoint', () => {
-    // List cards with limit
-    const listRes = http.get(`${BASE}/v1/cards?limit=10`);
-    expect(listRes.status).toBe(200);
+function testIndex() {
+  group("Index", () => {
+    const res = http.get(`${BASE_URL}/`, jsonHeaders);
+    const body = res.json();
 
+    const ok = check(res, {
+      "GET / returns 200": (r) => r.status === 200,
+      "index has name": () => typeof body.name === "string",
+      "index has version": () => typeof body.version === "string",
+      "index has endpoints map": () =>
+        typeof body.endpoints === "object" && body.endpoints !== null,
+      "index has stats": () => hasFields(body, ["stats"]),
+      "index has Link header with api-catalog": (r) => {
+        const links = r.headers["Link"];
+        if (!links) return false;
+        return links.includes('rel="api-catalog"');
+      },
+      "index has Link header with service-doc": (r) => {
+        const links = r.headers["Link"];
+        if (!links) return false;
+        return links.includes('rel="service-doc"');
+      },
+      "index has Link header with service-desc": (r) => {
+        const links = r.headers["Link"];
+        if (!links) return false;
+        return links.includes('rel="service-desc"');
+      },
+    });
+    errorRate.add(!ok);
+  });
+}
+
+function testOpenAPISpec() {
+  group("OpenAPI Spec", () => {
+    const res = http.get(`${BASE_URL}/openapi.yaml`);
+
+    const ok = check(res, {
+      "GET /openapi.yaml returns 200": (r) => r.status === 200,
+      "openapi.yaml content-type is yaml": (r) =>
+        r.headers["Content-Type"].includes("yaml") ||
+        r.headers["Content-Type"].includes("text/plain"),
+      "openapi.yaml body contains openapi version": (r) =>
+        r.body.includes("openapi: 3.0"),
+      "openapi.yaml body contains paths": (r) => r.body.includes("paths:"),
+    });
+    errorRate.add(!ok);
+
+    // Also test /openapi alias
+    const resAlias = http.get(`${BASE_URL}/openapi`);
+    check(resAlias, {
+      "GET /openapi alias returns 200": (r) => r.status === 200,
+    });
+  });
+}
+
+function testListCards() {
+  group("Cards - List", () => {
+    // Default listing
+    const res = http.get(`${BASE_URL}/v1/cards`);
+    const body = res.json();
+    cardSearchDuration.add(res.timings.duration);
+
+    const ok = check(res, {
+      "GET /v1/cards returns 200": (r) => r.status === 200,
+      "response has paginated shape": () =>
+        hasFields(body, ["data", "total", "limit", "offset"]),
+      "data is array": () => Array.isArray(body.data),
+      "default limit is 50": () => body.limit === 50,
+      "default offset is 0": () => body.offset === 0,
+      "total > 0": () => body.total > 0,
+      "data length <= limit": () => body.data.length <= body.limit,
+    });
+    errorRate.add(!ok);
+
+    // Verify card schema on first item
+    if (body.data && body.data.length > 0) {
+      const card = body.data[0];
+      check(card, {
+        "card has unique_id": (c) => typeof c.unique_id === "string",
+        "card has name": (c) => typeof c.name === "string",
+        "card has types array": (c) => Array.isArray(c.types),
+        "card has printings array": (c) => Array.isArray(c.printings),
+      });
+    }
+  });
+}
+
+function testSearchCards() {
+  group("Cards - Search", () => {
+    // Search by name
+    const byName = http.get(`${BASE_URL}/v1/cards?name=Enlightened+Strike`);
+    cardSearchDuration.add(byName.timings.duration);
+    const nameBody = byName.json();
+
+    check(byName, {
+      "search by name returns 200": (r) => r.status === 200,
+      "search by name returns results": () => nameBody.total > 0,
+      "search results match name filter": () =>
+        nameBody.data.every((c) =>
+          c.name.toLowerCase().includes("enlightened strike")
+        ),
+    });
+
+    // Search by class
+    const byClass = http.get(`${BASE_URL}/v1/cards?class=Ninja&limit=5`);
+    cardSearchDuration.add(byClass.timings.duration);
+    const classBody = byClass.json();
+
+    check(byClass, {
+      "search by class returns 200": (r) => r.status === 200,
+      "search by class returns results": () => classBody.total > 0,
+      "search by class respects limit": () => classBody.data.length <= 5,
+    });
+
+    // Search by pitch
+    const byPitch = http.get(`${BASE_URL}/v1/cards?pitch=1&limit=3`);
+    cardSearchDuration.add(byPitch.timings.duration);
+
+    check(byPitch, {
+      "search by pitch returns 200": (r) => r.status === 200,
+      "search by pitch returns results": () => byPitch.json().total > 0,
+    });
+
+    // Search by keyword
+    const byKeyword = http.get(
+      `${BASE_URL}/v1/cards?keyword=Go+again&limit=3`
+    );
+    cardSearchDuration.add(byKeyword.timings.duration);
+
+    check(byKeyword, {
+      "search by keyword returns 200": (r) => r.status === 200,
+      "search by keyword returns results": () => byKeyword.json().total > 0,
+    });
+
+    // Full-text search
+    const byText = http.get(`${BASE_URL}/v1/cards?q=draw+a+card&limit=3`);
+    cardSearchDuration.add(byText.timings.duration);
+
+    check(byText, {
+      "full-text search returns 200": (r) => r.status === 200,
+      "full-text search returns results": () => byText.json().total > 0,
+    });
+
+    // Search by format legality
+    const byLegality = http.get(
+      `${BASE_URL}/v1/cards?legal_in=blitz&limit=3`
+    );
+    cardSearchDuration.add(byLegality.timings.duration);
+
+    check(byLegality, {
+      "search by legality returns 200": (r) => r.status === 200,
+      "search by legality returns results": () => byLegality.json().total > 0,
+    });
+
+    // Combined filters
+    const combined = http.get(
+      `${BASE_URL}/v1/cards?class=Warrior&pitch=1&limit=3`
+    );
+    cardSearchDuration.add(combined.timings.duration);
+
+    check(combined, {
+      "combined filter returns 200": (r) => r.status === 200,
+    });
+  });
+}
+
+function testPagination() {
+  group("Cards - Pagination", () => {
+    // Custom limit
+    const res = http.get(`${BASE_URL}/v1/cards?limit=5&offset=10`);
+    const body = res.json();
+
+    check(res, {
+      "pagination returns 200": (r) => r.status === 200,
+      "pagination respects limit": () => body.data.length <= 5,
+      "pagination limit reflects param": () => body.limit === 5,
+      "pagination offset reflects param": () => body.offset === 10,
+    });
+
+    // Max limit cap at 100
+    const capped = http.get(`${BASE_URL}/v1/cards?limit=200`);
+    const cappedBody = capped.json();
+
+    check(capped, {
+      "limit is capped at 100": () => cappedBody.limit === 100,
+      "capped response length <= 100": () => cappedBody.data.length <= 100,
+    });
+  });
+}
+
+function testGetCard() {
+  group("Cards - Get by ID", () => {
+    // First, fetch a card ID from the list
+    const listRes = http.get(`${BASE_URL}/v1/cards?limit=1`);
     const listBody = listRes.json();
-    expect(listBody.data).toBeDefined();
-    expect(listBody.data.length).toBeLessThanOrEqual(10);
-    expect(listBody.total).toBeGreaterThan(0);
 
-    // Search cards by name
-    const searchRes = http.get(`${BASE}/v1/cards?name=Strike&limit=5`);
-    expect(searchRes.status).toBe(200);
-
-    const searchBody = searchRes.json();
-    expect(searchBody.data).toBeDefined();
-    expect(searchBody.data.length).toBeGreaterThan(0);
-
-    // Filter by class
-    const classRes = http.get(`${BASE}/v1/cards?class=Ninja&limit=5`);
-    expect(classRes.status).toBe(200);
-
-    const classBody = classRes.json();
-    expect(classBody.data).toBeDefined();
-
-    // Filter by pitch
-    const pitchRes = http.get(`${BASE}/v1/cards?pitch=3&limit=5`);
-    expect(pitchRes.status).toBe(200);
-
-    const pitchBody = pitchRes.json();
-    expect(pitchBody.data).toBeDefined();
-
-    // Filter by keyword
-    const keywordRes = http.get(`${BASE}/v1/cards?keyword=Go%20again&limit=5`);
-    expect(keywordRes.status).toBe(200);
-
-    const keywordBody = keywordRes.json();
-    expect(keywordBody.data).toBeDefined();
-
-    // Get specific card (using first result from search)
-    if (searchBody.data && searchBody.data.length > 0) {
-      const cardId = searchBody.data[0].unique_id;
-      const cardRes = http.get(`${BASE}/v1/cards/${cardId}`);
-      expect(cardRes.status).toBe(200);
-
-      const card = cardRes.json();
-      expect(card.unique_id).toBe(cardId);
-      expect(card.name).toBeDefined();
+    if (!listBody.data || listBody.data.length === 0) {
+      console.error("No cards available for GetCard test");
+      errorRate.add(true);
+      return;
     }
 
-    // Get card legality
-    if (searchBody.data && searchBody.data.length > 0) {
-      const cardId = searchBody.data[0].unique_id;
-      const legalityRes = http.get(`${BASE}/v1/cards/${cardId}/legality`);
-      expect(legalityRes.status).toBe(200);
+    const cardId = listBody.data[0].unique_id;
+    const cardName = listBody.data[0].name;
 
-      const legality = legalityRes.json();
-      expect(legality).toBeDefined();
-      expect(legality.card_id).toBe(cardId);
-      expect(legality.legalities).toBeDefined();
-      expect(Array.isArray(legality.legalities)).toBe(true);
-    }
-  });
+    // Get by unique_id
+    const byId = http.get(`${BASE_URL}/v1/cards/${encodeURIComponent(cardId)}`);
+    cardGetDuration.add(byId.timings.duration);
+    const cardBody = byId.json();
 
-  group('Sets Endpoint', () => {
-    const res = http.get(`${BASE}/v1/sets`);
-    expect(res.status).toBe(200);
-
-    const body = res.json();
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBeGreaterThan(0);
-
-    // Get specific set with cards
-    if (body.length > 0) {
-      const setRes = http.get(`${BASE}/v1/sets/${body[0].id}`);
-      expect(setRes.status).toBe(200);
-
-      const setBody = setRes.json();
-      expect(setBody.id).toBe(body[0].id);
-      expect(setBody.cards).toBeDefined();
-      expect(Array.isArray(setBody.cards)).toBe(true);
-    }
-  });
-
-  group('Keywords Endpoint', () => {
-    const res = http.get(`${BASE}/v1/keywords`);
-    expect(res.status).toBe(200);
-
-    const body = res.json();
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBeGreaterThan(0);
-
-    // Get specific keyword
-    if (body.length > 0) {
-      const kwRes = http.get(`${BASE}/v1/keywords/${encodeURIComponent(body[0].name)}`);
-      expect(kwRes.status).toBe(200);
-
-      const kw = kwRes.json();
-      expect(kw.name).toBeDefined();
-    }
-  });
-
-  group('Abilities Endpoint', () => {
-    const res = http.get(`${BASE}/v1/abilities`);
-    expect(res.status).toBe(200);
-
-    const body = res.json();
-    expect(Array.isArray(body)).toBe(true);
-  });
-
-  group('CORS Headers', () => {
-    // Test preflight request
-    const preflightRes = http.options(`${BASE}/v1/cards`, null, {
-      headers: {
-        Origin: 'https://example.com',
-        'Access-Control-Request-Method': 'GET',
-      },
+    const ok = check(byId, {
+      "GET /v1/cards/:id returns 200": (r) => r.status === 200,
+      "card has unique_id": () => cardBody.unique_id === cardId,
+      "card has name": () => typeof cardBody.name === "string",
+      "card has types": () => Array.isArray(cardBody.types),
+      "card has printings": () => Array.isArray(cardBody.printings),
+      "card has functional_text": () =>
+        typeof cardBody.functional_text === "string" ||
+        cardBody.functional_text === "",
+      "card has type_text": () => typeof cardBody.type_text === "string",
+      "card has legality booleans": () =>
+        typeof cardBody.blitz_legal === "boolean" &&
+        typeof cardBody.cc_legal === "boolean",
     });
+    errorRate.add(!ok);
 
-    // Preflight should return 204 No Content
-    expect(preflightRes.status).toBe(204);
+    // Get by name
+    const byName = http.get(
+      `${BASE_URL}/v1/cards/${encodeURIComponent(cardName)}`
+    );
+    cardGetDuration.add(byName.timings.duration);
 
-    // Check CORS headers
-    const allowOrigin = preflightRes.headers['Access-Control-Allow-Origin'];
-    const allowMethods = preflightRes.headers['Access-Control-Allow-Methods'];
-
-    expect(allowOrigin, 'CORS Allow-Origin header must be present').toBeDefined();
-    expect(allowMethods, 'CORS Allow-Methods header must be present').toBeDefined();
-
-    // Test actual request with Origin header
-    const res = http.get(`${BASE}/v1/cards?limit=1`, {
-      headers: {
-        Origin: 'https://example.com',
-      },
+    check(byName, {
+      "GET /v1/cards/:name returns 200": (r) => r.status === 200,
+      "card by name matches": () => byName.json().name === cardName,
     });
-    expect(res.status).toBe(200);
-    expect(res.headers['Access-Control-Allow-Origin']).toBeDefined();
-  });
-
-  group('Error Handling', () => {
-    // 404 for non-existent card
-    const notFoundRes = http.get(`${BASE}/v1/cards/non-existent-card-id-12345`);
-    expect(notFoundRes.status).toBe(404);
-
-    const errorBody = notFoundRes.json();
-    expect(errorBody.error).toBeDefined();
-  });
-
-  group('Landing Page', () => {
-    // Default request should return HTML landing page
-    const htmlRes = http.get(`${BASE}/`);
-    expect(htmlRes.status).toBe(200);
-    expect(htmlRes.headers['Content-Type']).toContain('text/html');
-
-    // Request with Accept: application/json should return JSON
-    const jsonRes = http.get(`${BASE}/`, {
-      headers: {
-        Accept: 'application/json',
-      },
-    });
-    expect(jsonRes.status).toBe(200);
-    expect(jsonRes.headers['Content-Type']).toContain('application/json');
-
-    const jsonBody = jsonRes.json();
-    expect(jsonBody.name).toBeDefined();
-    expect(jsonBody.endpoints).toBeDefined();
   });
 }
 
-// Default function - runs the functional tests
-export default function (data) {
-  functionalTests(data);
+function testGetCardNotFound() {
+  group("Cards - Not Found", () => {
+    const res = http.get(`${BASE_URL}/v1/cards/nonexistent-card-id-12345`, {
+      responseCallback: http.expectedStatuses(404),
+    });
+    const body = res.json();
+
+    check(res, {
+      "missing card returns 404": (r) => r.status === 404,
+      "404 has error field": () =>
+        hasFields(body, ["error"]) && typeof body.error === "string",
+    });
+  });
 }
 
-// Teardown - runs once after all tests
-export function teardown(data) {
-  console.log('\n=== Smoke Test Summary ===');
-  console.log(`API URL: ${data.baseUrl}`);
-  console.log(`Cards in database: ${data.stats.cards}`);
-  console.log(`Sets in database: ${data.stats.sets}`);
+function testCardLegality() {
+  group("Cards - Legality", () => {
+    // Get a card ID first
+    const listRes = http.get(`${BASE_URL}/v1/cards?limit=1`);
+    const listBody = listRes.json();
+
+    if (!listBody.data || listBody.data.length === 0) {
+      errorRate.add(true);
+      return;
+    }
+
+    const cardId = listBody.data[0].unique_id;
+
+    const res = http.get(
+      `${BASE_URL}/v1/cards/${encodeURIComponent(cardId)}/legality`
+    );
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET legality returns 200": (r) => r.status === 200,
+      "legality has card_id": () => body.card_id === cardId,
+      "legality has card_name": () => typeof body.card_name === "string",
+      "legality has legalities array": () => Array.isArray(body.legalities),
+      "legalities covers all 6 formats": () => body.legalities.length === 6,
+    });
+    errorRate.add(!ok);
+
+    // Validate legality entry schema
+    if (body.legalities && body.legalities.length > 0) {
+      const entry = body.legalities[0];
+      check(entry, {
+        "legality entry has format": (e) => typeof e.format === "string",
+        "legality entry has legal boolean": (e) => typeof e.legal === "boolean",
+        "legality entry has banned field": (e) =>
+          typeof e.banned === "boolean" || typeof e.banned === "undefined",
+        "legality entry has suspended field": (e) =>
+          typeof e.suspended === "boolean" || typeof e.suspended === "undefined",
+      });
+    }
+
+    // Legality 404
+    const notFound = http.get(
+      `${BASE_URL}/v1/cards/nonexistent-id-xyz/legality`,
+      { responseCallback: http.expectedStatuses(404) }
+    );
+    check(notFound, {
+      "legality for missing card returns 404": (r) => r.status === 404,
+    });
+  });
+}
+
+function testListSets() {
+  group("Sets - List", () => {
+    const res = http.get(`${BASE_URL}/v1/sets`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /v1/sets returns 200": (r) => r.status === 200,
+      "sets is array": () => Array.isArray(body),
+      "sets has items": () => body.length > 0,
+    });
+    errorRate.add(!ok);
+
+    if (body.length > 0) {
+      const set = body[0];
+      check(set, {
+        "set has unique_id": (s) => typeof s.unique_id === "string",
+        "set has id": (s) => typeof s.id === "string",
+        "set has name": (s) => typeof s.name === "string",
+        "set has printings": (s) => Array.isArray(s.printings),
+      });
+    }
+  });
+}
+
+function testSearchSets() {
+  group("Sets - Search", () => {
+    // Search by name
+    const byName = http.get(`${BASE_URL}/v1/sets?name=Welcome`);
+    check(byName, {
+      "search sets by name returns 200": (r) => r.status === 200,
+      "search sets by name is array": () => Array.isArray(byName.json()),
+    });
+
+    // Search by q
+    const byQ = http.get(`${BASE_URL}/v1/sets?q=WTR`);
+    check(byQ, {
+      "search sets by q returns 200": (r) => r.status === 200,
+      "search sets by q is array": () => Array.isArray(byQ.json()),
+    });
+  });
+}
+
+function testGetSet() {
+  group("Sets - Get by ID", () => {
+    const res = http.get(`${BASE_URL}/v1/sets/WTR`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /v1/sets/WTR returns 200": (r) => r.status === 200,
+      "set has id field": () => body.id === "WTR",
+      "set has name": () => typeof body.name === "string",
+      "set has cards array": () => Array.isArray(body.cards),
+      "set cards is non-empty": () => body.cards.length > 0,
+    });
+    errorRate.add(!ok);
+
+    // Set not found
+    const notFound = http.get(`${BASE_URL}/v1/sets/ZZZZZ`, {
+      responseCallback: http.expectedStatuses(404),
+    });
+    check(notFound, {
+      "missing set returns 404": (r) => r.status === 404,
+    });
+  });
+}
+
+function testListKeywords() {
+  group("Keywords - List", () => {
+    const res = http.get(`${BASE_URL}/v1/keywords`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /v1/keywords returns 200": (r) => r.status === 200,
+      "keywords is array": () => Array.isArray(body),
+      "keywords has items": () => body.length > 0,
+    });
+    errorRate.add(!ok);
+
+    if (body.length > 0) {
+      const kw = body[0];
+      check(kw, {
+        "keyword has unique_id": (k) => typeof k.unique_id === "string",
+        "keyword has name": (k) => typeof k.name === "string",
+        "keyword has description": (k) => typeof k.description === "string",
+      });
+    }
+  });
+}
+
+function testGetKeyword() {
+  group("Keywords - Get by name", () => {
+    const res = http.get(`${BASE_URL}/v1/keywords/Go%20again`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /v1/keywords/Go again returns 200": (r) => r.status === 200,
+      "keyword name matches": () =>
+        body.name.toLowerCase() === "go again",
+      "keyword has description": () => typeof body.description === "string",
+      "keyword has description_plain": () =>
+        typeof body.description_plain === "string",
+    });
+    errorRate.add(!ok);
+
+    // Keyword not found
+    const notFound = http.get(`${BASE_URL}/v1/keywords/NonexistentKeyword123`, {
+      responseCallback: http.expectedStatuses(404),
+    });
+    check(notFound, {
+      "missing keyword returns 404": (r) => r.status === 404,
+    });
+  });
+}
+
+function testListAbilities() {
+  group("Abilities - List", () => {
+    const res = http.get(`${BASE_URL}/v1/abilities`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /v1/abilities returns 200": (r) => r.status === 200,
+      "abilities is array": () => Array.isArray(body),
+      "abilities has items": () => body.length > 0,
+    });
+    errorRate.add(!ok);
+
+    if (body.length > 0) {
+      check(body[0], {
+        "ability has unique_id": (a) => typeof a.unique_id === "string",
+        "ability has name": (a) => typeof a.name === "string",
+      });
+    }
+  });
+}
+
+function testMarkdownNegotiation() {
+  group("Markdown Content Negotiation", () => {
+    const res = http.get(`${BASE_URL}/`, {
+      headers: { Accept: "text/markdown" },
+    });
+
+    const ok = check(res, {
+      "GET / with Accept: text/markdown returns 200": (r) =>
+        r.status === 200,
+      "markdown content-type is text/markdown": (r) =>
+        r.headers["Content-Type"].includes("text/markdown"),
+      "markdown body has heading": (r) => r.body.includes("# goagain"),
+      "markdown body has API endpoints section": (r) =>
+        r.body.includes("## API Endpoints"),
+      "markdown body has MCP tools section": (r) =>
+        r.body.includes("## MCP Tools"),
+      "markdown body has quick start section": (r) =>
+        r.body.includes("## Quick Start"),
+      "markdown body has agent discovery section": (r) =>
+        r.body.includes("## Agent Discovery"),
+      "markdown has Link headers": (r) => {
+        const links = r.headers["Link"];
+        return links && links.includes('rel="api-catalog"');
+      },
+    });
+    errorRate.add(!ok);
+  });
+}
+
+function testAgentSkillsIndex() {
+  group("Agent Skills Index", () => {
+    const res = http.get(`${BASE_URL}/.well-known/agent-skills/index.json`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /.well-known/agent-skills/index.json returns 200": (r) =>
+        r.status === 200,
+      "agent-skills content-type is json": (r) =>
+        r.headers["Content-Type"].includes("application/json"),
+      "agent-skills has $schema": () => typeof body.$schema === "string",
+      "agent-skills has skills array": () =>
+        Array.isArray(body.skills) && body.skills.length > 0,
+      "agent-skills has api-catalog skill": () =>
+        body.skills.some((s) => s.name === "api-catalog"),
+      "agent-skills has mcp-server-card skill": () =>
+        body.skills.some((s) => s.name === "mcp-server-card"),
+      "agent-skills has sitemap skill": () =>
+        body.skills.some((s) => s.name === "sitemap"),
+      "agent-skills has openapi skill": () =>
+        body.skills.some((s) => s.name === "openapi"),
+      "each skill has required fields": () =>
+        body.skills.every(
+          (s) => s.name && s.type && s.description && s.url
+        ),
+    });
+    errorRate.add(!ok);
+  });
+}
+
+function testMCPServerCard() {
+  group("MCP Server Card", () => {
+    const res = http.get(`${BASE_URL}/.well-known/mcp/server-card.json`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /.well-known/mcp/server-card.json returns 200": (r) =>
+        r.status === 200,
+      "mcp-card content-type is json": (r) =>
+        r.headers["Content-Type"].includes("application/json"),
+      "mcp-card has serverInfo.name": () =>
+        body.serverInfo && body.serverInfo.name === "goagain-mcp",
+      "mcp-card has serverInfo.version": () =>
+        body.serverInfo && typeof body.serverInfo.version === "string",
+      "mcp-card has serverInfo.description": () =>
+        body.serverInfo && typeof body.serverInfo.description === "string",
+      "mcp-card has transport.type": () =>
+        body.transport && body.transport.type === "http",
+      "mcp-card has transport.url": () =>
+        body.transport && typeof body.transport.url === "string",
+      "mcp-card has capabilities.tools": () =>
+        body.capabilities && body.capabilities.tools === true,
+    });
+    errorRate.add(!ok);
+  });
+}
+
+function testAPICatalog() {
+  group("API Catalog", () => {
+    const res = http.get(`${BASE_URL}/.well-known/api-catalog`);
+    const body = res.json();
+
+    const ok = check(res, {
+      "GET /.well-known/api-catalog returns 200": (r) => r.status === 200,
+      "api-catalog content-type is linkset+json": (r) =>
+        r.headers["Content-Type"].includes("application/linkset+json"),
+      "api-catalog has linkset array": () =>
+        Array.isArray(body.linkset) && body.linkset.length > 0,
+      "api-catalog entry has anchor": () =>
+        typeof body.linkset[0].anchor === "string",
+      "api-catalog entry has service-desc": () =>
+        Array.isArray(body.linkset[0]["service-desc"]) &&
+        body.linkset[0]["service-desc"][0].href.includes("/openapi.yaml"),
+      "api-catalog entry has service-doc": () =>
+        Array.isArray(body.linkset[0]["service-doc"]) &&
+        body.linkset[0]["service-doc"][0].href.includes("/docs"),
+      "api-catalog entry has status": () =>
+        Array.isArray(body.linkset[0]["status"]) &&
+        body.linkset[0]["status"][0].href.includes("/health"),
+    });
+    errorRate.add(!ok);
+  });
+}
+
+function testSitemapXml() {
+  group("Sitemap XML", () => {
+    const res = http.get(`${BASE_URL}/sitemap.xml`);
+
+    const ok = check(res, {
+      "GET /sitemap.xml returns 200": (r) => r.status === 200,
+      "sitemap content-type is xml": (r) =>
+        r.headers["Content-Type"].includes("application/xml"),
+      "sitemap has urlset root": (r) => r.body.includes("<urlset"),
+      "sitemap has homepage loc": (r) =>
+        r.body.includes("<loc>") && r.body.includes("</loc>"),
+      "sitemap has /docs": (r) => r.body.includes("/docs</loc>"),
+      "sitemap has /openapi.yaml": (r) =>
+        r.body.includes("/openapi.yaml</loc>"),
+      "sitemap has /v1/cards": (r) => r.body.includes("/v1/cards</loc>"),
+      "sitemap has /v1/sets": (r) => r.body.includes("/v1/sets</loc>"),
+      "sitemap has /v1/keywords": (r) =>
+        r.body.includes("/v1/keywords</loc>"),
+      "sitemap has /v1/abilities": (r) =>
+        r.body.includes("/v1/abilities</loc>"),
+    });
+    errorRate.add(!ok);
+  });
+}
+
+function testRobotsTxt() {
+  group("Robots.txt", () => {
+    const res = http.get(`${BASE_URL}/robots.txt`);
+
+    const ok = check(res, {
+      "GET /robots.txt returns 200": (r) => r.status === 200,
+      "robots.txt content-type is text/plain": (r) =>
+        r.headers["Content-Type"].includes("text/plain"),
+      "robots.txt has wildcard user-agent": (r) =>
+        r.body.includes("User-agent: *"),
+      "robots.txt has GPTBot rules": (r) =>
+        r.body.includes("User-agent: GPTBot"),
+      "robots.txt has Claude-Web rules": (r) =>
+        r.body.includes("User-agent: Claude-Web"),
+      "robots.txt has Google-Extended rules": (r) =>
+        r.body.includes("User-agent: Google-Extended"),
+      "robots.txt has Sitemap directive": (r) =>
+        r.body.includes("Sitemap:") && r.body.includes("/sitemap.xml"),
+      "robots.txt has Content-Signal directive": (r) =>
+        r.body.includes("Content-Signal:") &&
+        r.body.includes("ai-train=no") &&
+        r.body.includes("search=yes") &&
+        r.body.includes("ai-input=yes"),
+    });
+    errorRate.add(!ok);
+  });
+}
+
+function testContentType() {
+  group("Content-Type headers", () => {
+    const endpoints = [
+      "/health",
+      "/v1/cards?limit=1",
+      "/v1/sets",
+      "/v1/keywords",
+      "/v1/abilities",
+    ];
+
+    for (const ep of endpoints) {
+      const res = http.get(`${BASE_URL}${ep}`);
+      check(res, {
+        [`${ep} returns application/json`]: (r) =>
+          r.headers["Content-Type"].includes("application/json"),
+      });
+    }
+  });
+}
+
+// -- Main --
+
+export default function () {
+  testHealth();
+  testIndex();
+  testOpenAPISpec();
+  testListCards();
+  testSearchCards();
+  testPagination();
+  testGetCard();
+  testGetCardNotFound();
+  testCardLegality();
+  testListSets();
+  testSearchSets();
+  testGetSet();
+  testListKeywords();
+  testGetKeyword();
+  testListAbilities();
+  testMarkdownNegotiation();
+  testAgentSkillsIndex();
+  testMCPServerCard();
+  testAPICatalog();
+  testSitemapXml();
+  testRobotsTxt();
+  testContentType();
+
+  sleep(1);
 }

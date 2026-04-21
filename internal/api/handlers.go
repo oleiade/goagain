@@ -3,6 +3,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -83,8 +84,24 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if client wants JSON
+	// Add Link headers for agent discovery (RFC 8288)
+	w.Header().Add("Link", `</.well-known/api-catalog>; rel="api-catalog"`)
+	w.Header().Add("Link", `</docs>; rel="service-doc"`)
+	w.Header().Add("Link", `</openapi.yaml>; rel="service-desc"`)
+
+	// Check Accept header for content negotiation
 	accept := r.Header.Get("Accept")
+
+	// Serve markdown for agents requesting it
+	if strings.Contains(accept, "text/markdown") {
+		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+		md := string(landingMarkdown)
+		md = strings.ReplaceAll(md, "https://api.goagain.dev", h.apiBaseURL)
+		md = strings.ReplaceAll(md, "https://mcp.goagain.dev", h.mcpBaseURL)
+		_, _ = w.Write([]byte(md))
+		return
+	}
+
 	if strings.Contains(accept, "application/json") {
 		dataStats, _ := h.store.Stats()
 		info := map[string]any{
@@ -267,6 +284,148 @@ func (h *Handler) GetKeyword(w http.ResponseWriter, r *http.Request) {
 // ListAbilities returns all abilities.
 func (h *Handler) ListAbilities(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, h.store.Abilities)
+}
+
+// RobotsTxt serves the robots.txt file with AI crawler rules and Content Signals.
+func (h *Handler) RobotsTxt(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	_, _ = fmt.Fprintf(w, `# Robots.txt for goagain API
+# https://www.rfc-editor.org/rfc/rfc9309
+
+User-agent: *
+Allow: /
+
+# AI crawlers: allow access, disallow training
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+Sitemap: %s/sitemap.xml
+
+# Content Signals (https://contentsignals.org/)
+# https://datatracker.ietf.org/doc/draft-romm-aipref-contentsignals/
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+`, h.apiBaseURL)
+}
+
+// AgentSkillsIndex serves the agent skills discovery index.
+func (h *Handler) AgentSkillsIndex(w http.ResponseWriter, r *http.Request) {
+	index := map[string]any{
+		"$schema": "https://agentskills.io/schema/v0.2.0/index.json",
+		"skills": []map[string]string{
+			{
+				"name":        "api-catalog",
+				"type":        "api-catalog",
+				"description": "API catalog for automated discovery (RFC 9727)",
+				"url":         h.apiBaseURL + "/.well-known/api-catalog",
+			},
+			{
+				"name":        "mcp-server-card",
+				"type":        "mcp-server-card",
+				"description": "MCP Server Card for agent tool discovery",
+				"url":         h.apiBaseURL + "/.well-known/mcp/server-card.json",
+			},
+			{
+				"name":        "sitemap",
+				"type":        "sitemap",
+				"description": "XML sitemap with canonical URLs",
+				"url":         h.apiBaseURL + "/sitemap.xml",
+			},
+			{
+				"name":        "robots-txt",
+				"type":        "robots-txt",
+				"description": "Robots.txt with AI crawler rules and Content Signals",
+				"url":         h.apiBaseURL + "/robots.txt",
+			},
+			{
+				"name":        "openapi",
+				"type":        "openapi",
+				"description": "OpenAPI 3.0 specification for the REST API",
+				"url":         h.apiBaseURL + "/openapi.yaml",
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(index)
+}
+
+// MCPServerCard serves the MCP Server Card for agent discovery (SEP-1649).
+func (h *Handler) MCPServerCard(w http.ResponseWriter, r *http.Request) {
+	card := map[string]any{
+		"serverInfo": map[string]string{
+			"name":        "goagain-mcp",
+			"version":     "1.0.0",
+			"description": "Flesh and Blood card game data MCP server",
+		},
+		"transport": map[string]string{
+			"type": "http",
+			"url":  h.mcpBaseURL + "/",
+		},
+		"capabilities": map[string]bool{
+			"tools": true,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(card)
+}
+
+// APICatalog serves the API catalog (RFC 9727) as application/linkset+json.
+func (h *Handler) APICatalog(w http.ResponseWriter, r *http.Request) {
+	catalog := map[string]any{
+		"linkset": []map[string]any{
+			{
+				"anchor":       h.apiBaseURL + "/",
+				"service-desc": []map[string]string{{"href": h.apiBaseURL + "/openapi.yaml", "type": "application/yaml"}},
+				"service-doc":  []map[string]string{{"href": h.apiBaseURL + "/docs"}},
+				"status":       []map[string]string{{"href": h.apiBaseURL + "/health"}},
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/linkset+json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(catalog)
+}
+
+// SitemapXML serves a sitemap.xml listing canonical URLs for all public endpoints.
+func (h *Handler) SitemapXML(w http.ResponseWriter, r *http.Request) {
+	urls := []string{
+		"/",
+		"/docs",
+		"/openapi.yaml",
+		"/health",
+		"/v1/cards",
+		"/v1/sets",
+		"/v1/keywords",
+		"/v1/abilities",
+	}
+
+	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+	_, _ = fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+`)
+	for _, u := range urls {
+		_, _ = fmt.Fprintf(w, "  <url>\n    <loc>%s%s</loc>\n  </url>\n", h.apiBaseURL, u)
+	}
+	_, _ = fmt.Fprint(w, "</urlset>\n")
 }
 
 // GetCardLegality returns legality info for a card across all formats.

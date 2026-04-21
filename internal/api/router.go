@@ -23,6 +23,9 @@ var openAPISpec []byte
 //go:embed landing.html
 var landingPage []byte
 
+//go:embed landing.md
+var landingMarkdown []byte
+
 //go:embed static/tailwind.min.css
 var tailwindCSS []byte
 
@@ -90,6 +93,13 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 
 	// Root - Landing page / API info (unversioned)
 	mux.HandleFunc("GET /", h.Index)
+
+	// Agent discovery endpoints
+	mux.HandleFunc("GET /robots.txt", h.RobotsTxt)
+	mux.HandleFunc("GET /sitemap.xml", h.SitemapXML)
+	mux.HandleFunc("GET /.well-known/api-catalog", h.APICatalog)
+	mux.HandleFunc("GET /.well-known/mcp/server-card.json", h.MCPServerCard)
+	mux.HandleFunc("GET /.well-known/agent-skills/index.json", h.AgentSkillsIndex)
 
 	// Operational endpoints (unversioned)
 	mux.HandleFunc("GET /health", h.Health)
