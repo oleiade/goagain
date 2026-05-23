@@ -241,7 +241,23 @@ func LogDataLoaded(logger *slog.Logger, stats map[string]int) {
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Data loaded", attrs...)
 }
 
+// maxXFFEntries bounds how many X-Forwarded-For entries we inspect. Real chains
+// are short (≤4); an attacker padding the header with thousands of entries would
+// otherwise force every middleware (logging, rate-limit, metrics) to re-parse it.
+const maxXFFEntries = 10
+
 // GetClientIPFunc returns a function that extracts the client IP considering trusted proxies.
+//
+// When the request originates from a trusted proxy, the function walks
+// X-Forwarded-For right-to-left and returns the first IP that is itself NOT in
+// trustedProxies — i.e., the closest hop to the client that the operator did not
+// pre-authorise. Leftmost selection is unsafe: it is the client-supplied value
+// and an attacker can spoof it freely (`X-Forwarded-For: 1.2.3.4` is appended-to
+// by the proxy, never overwritten), which would let a single attacker bypass
+// per-IP rate limiting by rotating the spoofed value.
+//
+// When TRUSTED_PROXIES is unset or the request comes from an untrusted source,
+// X-Forwarded-For and X-Real-IP are ignored entirely.
 func GetClientIPFunc(trustedProxies []*net.IPNet) func(*http.Request) string {
 	return func(r *http.Request) string {
 		remoteIP, _, err := net.SplitHostPort(r.RemoteAddr)
@@ -249,31 +265,65 @@ func GetClientIPFunc(trustedProxies []*net.IPNet) func(*http.Request) string {
 			remoteIP = r.RemoteAddr
 		}
 
-		trusted := false
-		if len(trustedProxies) > 0 {
-			ip := net.ParseIP(remoteIP)
-			for _, cidr := range trustedProxies {
-				if cidr.Contains(ip) {
-					trusted = true
-					break
+		if len(trustedProxies) == 0 {
+			return remoteIP
+		}
+		parsedRemote := net.ParseIP(remoteIP)
+		if parsedRemote == nil || !containedIn(parsedRemote, trustedProxies) {
+			return remoteIP
+		}
+
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			entries := strings.Split(xff, ",")
+			if len(entries) > maxXFFEntries {
+				entries = entries[len(entries)-maxXFFEntries:]
+			}
+			for i := len(entries) - 1; i >= 0; i-- {
+				candidate := parseForwardedAddr(entries[i])
+				if candidate == nil {
+					continue
+				}
+				if !containedIn(candidate, trustedProxies) {
+					return candidate.String()
 				}
 			}
 		}
 
-		// Only trust X-Forwarded-For from trusted proxies
-		if trusted {
-			if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-				if idx := strings.Index(xff, ","); idx != -1 {
-					return strings.TrimSpace(xff[:idx])
-				}
-				return strings.TrimSpace(xff)
-			}
-
-			if xri := r.Header.Get("X-Real-IP"); xri != "" {
-				return strings.TrimSpace(xri)
+		if xri := r.Header.Get("X-Real-IP"); xri != "" {
+			if candidate := parseForwardedAddr(xri); candidate != nil {
+				return candidate.String()
 			}
 		}
 
 		return remoteIP
 	}
+}
+
+// parseForwardedAddr extracts a net.IP from a single XFF / X-Real-IP entry,
+// tolerating surrounding whitespace, IPv6 bracket notation, and an optional
+// :port suffix that some proxies (HAProxy, AWS ALB) include. Returns nil for
+// any unparseable input rather than letting garbage propagate into rate-limit
+// keys or logs.
+func parseForwardedAddr(s string) net.IP {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	// SplitHostPort handles "[::1]:443" and "1.2.3.4:5678"; fall back to the
+	// raw string (and strip any lone surrounding brackets) when there is no port.
+	if host, _, err := net.SplitHostPort(s); err == nil {
+		s = host
+	} else {
+		s = strings.TrimPrefix(strings.TrimSuffix(s, "]"), "[")
+	}
+	return net.ParseIP(s)
+}
+
+func containedIn(ip net.IP, cidrs []*net.IPNet) bool {
+	for _, cidr := range cidrs {
+		if cidr.Contains(ip) {
+			return true
+		}
+	}
+	return false
 }

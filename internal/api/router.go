@@ -62,12 +62,18 @@ func LoadConfig() Config {
 	}
 
 	if proxies := os.Getenv("TRUSTED_PROXIES"); proxies != "" {
-		for _, cidr := range strings.Split(proxies, ",") {
+		for cidr := range strings.SplitSeq(proxies, ",") {
 			cidr = strings.TrimSpace(cidr)
 			_, ipNet, err := net.ParseCIDR(cidr)
 			if err != nil {
 				sanitized := strings.ReplaceAll(strings.ReplaceAll(cidr, "\n", ""), "\r", "")
 				slog.Warn("Invalid CIDR in TRUSTED_PROXIES", slog.String("cidr", sanitized))
+				continue
+			}
+			// A /0 mask trusts every source IP, turning XFF spoofing into a
+			// one-line global authentication bypass. Always reject.
+			if ones, _ := ipNet.Mask.Size(); ones == 0 {
+				slog.Warn("Refusing /0 CIDR in TRUSTED_PROXIES", slog.String("cidr", ipNet.String()))
 				continue
 			}
 			config.TrustedProxies = append(config.TrustedProxies, ipNet)
