@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -133,7 +134,11 @@ func NewRouter(ctx context.Context, store *data.Store, logger *slog.Logger, metr
 
 	handler := http.Handler(mux)
 
-	// Apply CORS first (innermost)
+	// Security headers sit innermost so every response — including 429 from the
+	// rate limiter and 204 from CORS preflight — carries nosniff et al.
+	handler = securityHeadersMiddleware(handler)
+
+	// CORS
 	handler = corsMiddleware(handler, config)
 
 	// Rate limiting (uses clientIP for trusted-proxy-aware key)
@@ -147,14 +152,20 @@ func NewRouter(ctx context.Context, store *data.Store, logger *slog.Logger, metr
 	// Logging middleware
 	handler = observability.LoggingMiddleware(logger, clientIP)(handler)
 
-	// Request ID middleware (outermost)
+	// Request ID middleware (sets X-Request-ID on the response writer before any
+	// inner handler runs; recoverMiddleware reads it back from that header).
 	handler = observability.RequestIDMiddleware(handler)
+
+	// recoverMiddleware sits outermost so a panic anywhere downstream — including
+	// in RequestIDMiddleware itself — still produces a clean 500 instead of
+	// crashing the goroutine and corrupting the HTTP/1.1 connection.
+	handler = recoverMiddleware(handler, logger)
 
 	return handler
 }
 
 func serveOpenAPI(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/yaml")
+	w.Header().Set("Content-Type", "application/yaml; charset=utf-8")
 	_, _ = w.Write(openAPISpec)
 }
 
@@ -178,7 +189,7 @@ func serveDocs(w http.ResponseWriter, _ *http.Request) {
   <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@` + scalarAPIReferenceVersion + `"></script>
 </body>
 </html>`
-	w.Header().Set("Content-Type", "text/html")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(html))
 }
 
@@ -198,23 +209,98 @@ func corsMiddleware(next http.Handler, config Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 
+		// Vary: Origin is required even when allowAll is true — a CDN keyed
+		// purely on URL would otherwise serve a stale ACAO if an operator later
+		// tightens CORS_ORIGINS without flushing the cache.
+		w.Header().Add("Vary", "Origin")
+
 		if allowAll {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 		} else if allowedOrigins[origin] {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Vary", "Origin")
 		}
 
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 		if r.Method == http.MethodOptions {
+			// Cache preflight for 10 minutes so each real request does not
+			// double-fire as preflight + real, doubling rate-limit cost.
+			w.Header().Set("Access-Control-Max-Age", "600")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// securityHeadersMiddleware sets the small set of always-safe response headers.
+// We intentionally do NOT set Content-Security-Policy globally: /docs loads
+// the Scalar bundle from cdn.jsdelivr.net (version-pinned) and a strict CSP
+// would break it. For a JSON-only API there is no XSS sink to protect anyway;
+// nosniff is the load-bearing header here.
+func securityHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "no-referrer")
+		next.ServeHTTP(w, r)
+	})
+}
+
+// recoverMiddleware catches panics from downstream handlers, logs them with
+// the request_id (read from the response header set by RequestIDMiddleware),
+// and writes a generic 500 if the inner handler did not already commit a
+// response. Without this, otelhttp does not recover panics and an HTTP/1.1
+// connection can be left in a corrupted state.
+func recoverMiddleware(next http.Handler, logger *slog.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rw := &recoverResponseWriter{ResponseWriter: w}
+		defer func() {
+			rec := recover()
+			if rec == nil {
+				return
+			}
+			requestID := w.Header().Get("X-Request-ID")
+			logger.LogAttrs(r.Context(), slog.LevelError, "HTTP handler panic",
+				slog.Any("panic", rec),
+				slog.String("request_id", requestID),
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.String("stack", string(debug.Stack())),
+			)
+			if !rw.wroteHeader {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				w.WriteHeader(http.StatusInternalServerError)
+				_, _ = w.Write([]byte(`{"error":"internal server error"}`))
+			}
+		}()
+		next.ServeHTTP(rw, r)
+	})
+}
+
+// recoverResponseWriter is a minimal wrapper that tracks whether WriteHeader
+// (or Write — which implicitly calls WriteHeader(200)) has been called, so
+// recoverMiddleware knows whether it is safe to write its own 500 body.
+type recoverResponseWriter struct {
+	http.ResponseWriter
+	wroteHeader bool
+}
+
+func (rw *recoverResponseWriter) WriteHeader(code int) {
+	rw.wroteHeader = true
+	rw.ResponseWriter.WriteHeader(code)
+}
+
+func (rw *recoverResponseWriter) Write(b []byte) (int, error) {
+	rw.wroteHeader = true
+	return rw.ResponseWriter.Write(b)
+}
+
+func (rw *recoverResponseWriter) Unwrap() http.ResponseWriter {
+	return rw.ResponseWriter
 }
 
 // rateLimitMiddleware enforces a per-IP token-bucket limit and reaps idle entries in a
@@ -271,7 +357,7 @@ func rateLimitMiddleware(ctx context.Context, next http.Handler, config Config, 
 			if metrics != nil {
 				metrics.RecordRateLimitRejection()
 			}
-			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.Header().Set("Retry-After", "1")
 			w.WriteHeader(http.StatusTooManyRequests)
 			_ = json.NewEncoder(w).Encode(map[string]string{

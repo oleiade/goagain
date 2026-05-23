@@ -28,11 +28,18 @@ func New(name string, port int, logger *slog.Logger, router http.Handler) *Serve
 
 	return &Server{
 		Server: &http.Server{
-			Addr:         addr,
-			Handler:      router,
-			ReadTimeout:  15 * time.Second,
-			WriteTimeout: 30 * time.Second,
-			IdleTimeout:  60 * time.Second,
+			Addr:    addr,
+			Handler: router,
+			// ReadHeaderTimeout caps how long a client may take to send headers.
+			// Without it, Slowloris-style attacks can hold goroutines open up to
+			// the full ReadTimeout window. Keep this much tighter than ReadTimeout
+			// so legitimate slow bodies still work while header-drip attacks are
+			// killed quickly.
+			ReadHeaderTimeout: 5 * time.Second,
+			ReadTimeout:       15 * time.Second,
+			WriteTimeout:      30 * time.Second,
+			IdleTimeout:       60 * time.Second,
+			MaxHeaderBytes:    64 << 10,
 		},
 		logger: logger,
 		name:   name,
