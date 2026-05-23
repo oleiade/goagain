@@ -130,10 +130,12 @@ func LoggingMiddleware(logger *slog.Logger, getClientIP func(*http.Request) stri
 				clientIP = defaultGetClientIP(r)
 			}
 
-			// Build log attributes
+			// Build log attributes. Path and query are attacker-controlled
+			// surfaces (control bytes, ANSI escapes, oversize) — sanitize before
+			// they reach a slog text handler, where they would render verbatim.
 			attrs := []slog.Attr{
 				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
+				slog.String("path", sanitizeLogField(r.URL.Path, maxLogFieldLen)),
 				slog.Int("status", wrapped.status),
 				slog.Float64("duration_ms", float64(duration.Microseconds())/1000.0),
 				slog.Int64("response_size", wrapped.size),
@@ -147,7 +149,7 @@ func LoggingMiddleware(logger *slog.Logger, getClientIP func(*http.Request) stri
 
 			// Add query string if present
 			if r.URL.RawQuery != "" {
-				attrs = append(attrs, slog.String("query", r.URL.RawQuery))
+				attrs = append(attrs, slog.String("query", sanitizeLogField(r.URL.RawQuery, maxLogFieldLen)))
 			}
 
 			// Log at appropriate level based on status
@@ -185,6 +187,44 @@ func (rw *responseWriterWrapper) Write(b []byte) (int, error) {
 // Unwrap returns the underlying ResponseWriter for middleware that need it.
 func (rw *responseWriterWrapper) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
+}
+
+// maxLogFieldLen caps individual log field lengths to defang
+// log-volume-amplification attacks (e.g. a 1 MiB URL path that lands in every
+// request log line). 2 KiB comfortably covers any legitimate API path or query.
+const maxLogFieldLen = 2 << 10
+
+// sanitizeLogField strips bytes that corrupt downstream log shippers and
+// terminals — ASCII control characters (CR, LF, NUL, ANSI escape ESC) and
+// 0x7F — and caps the result at max bytes. JSON handlers escape these already
+// but the text handler does not, and many log pipelines split on \n before
+// parsing structured records. Truncation is enforced at byte boundaries, which
+// is safe because the dropped bytes were already outside the printable range.
+func sanitizeLogField(s string, max int) string {
+	if len(s) > max {
+		s = s[:max]
+	}
+	// Fast path: most paths are already clean ASCII without control bytes.
+	clean := true
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c < 0x20 && c != '\t') || c == 0x7f {
+			clean = false
+			break
+		}
+	}
+	if clean {
+		return s
+	}
+	b := make([]byte, 0, len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if (c < 0x20 && c != '\t') || c == 0x7f {
+			continue
+		}
+		b = append(b, c)
+	}
+	return string(b)
 }
 
 // defaultGetClientIP extracts client IP from the request.
