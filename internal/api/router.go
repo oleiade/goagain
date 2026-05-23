@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"log/slog"
@@ -85,7 +86,9 @@ func LoadConfig() Config {
 }
 
 // NewRouter creates a new HTTP router with all API routes registered.
-func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Metrics, obsConfig observability.Config) http.Handler {
+// The provided ctx governs the lifetime of background goroutines (e.g. rate-limit cleanup);
+// cancelling it stops them.
+func NewRouter(ctx context.Context, store *data.Store, logger *slog.Logger, metrics *observability.Metrics, _ observability.Config) http.Handler {
 	config := LoadConfig()
 
 	mux := http.NewServeMux()
@@ -118,14 +121,17 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	mux.HandleFunc("GET /v1/keywords/{name}", h.GetKeyword)
 	mux.HandleFunc("GET /v1/abilities", h.ListAbilities)
 
-	// Build middleware chain (applied in reverse order)
+	// Build middleware chain (applied in reverse order).
+	// Single source of truth for client-IP extraction: observability.GetClientIPFunc.
+	clientIP := observability.GetClientIPFunc(config.TrustedProxies)
+
 	handler := http.Handler(mux)
 
 	// Apply CORS first (innermost)
 	handler = corsMiddleware(handler, config)
 
-	// Rate limiting
-	handler = rateLimitMiddleware(handler, config, metrics)
+	// Rate limiting (uses clientIP for trusted-proxy-aware key)
+	handler = rateLimitMiddleware(ctx, handler, config, metrics, clientIP)
 
 	// Metrics middleware
 	if metrics != nil {
@@ -133,8 +139,7 @@ func NewRouter(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	}
 
 	// Logging middleware
-	getClientIP := observability.GetClientIPFunc(config.TrustedProxies)
-	handler = observability.LoggingMiddleware(logger, getClientIP)(handler)
+	handler = observability.LoggingMiddleware(logger, clientIP)(handler)
 
 	// Request ID middleware (outermost)
 	handler = observability.RequestIDMiddleware(handler)
@@ -147,7 +152,13 @@ func serveOpenAPI(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(openAPISpec)
 }
 
-func serveDocs(w http.ResponseWriter, r *http.Request) {
+// scalarAPIReferenceVersion pins the Scalar API reference bundle loaded by the docs
+// page. Bumping this version is a docs-only change but should be done deliberately;
+// an unpinned `@latest` from a CDN turns any CDN-side compromise into RCE against
+// every viewer of /docs. Last bumped from upstream npm latest.
+const scalarAPIReferenceVersion = "1.57.5"
+
+func serveDocs(w http.ResponseWriter, _ *http.Request) {
 	// Serve Scalar API documentation
 	html := `<!DOCTYPE html>
 <html>
@@ -158,7 +169,7 @@ func serveDocs(w http.ResponseWriter, r *http.Request) {
 </head>
 <body>
   <script id="api-reference" data-url="/openapi.yaml"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@` + scalarAPIReferenceVersion + `"></script>
 </body>
 </html>`
 	w.Header().Set("Content-Type", "text/html")
@@ -200,7 +211,9 @@ func corsMiddleware(next http.Handler, config Config) http.Handler {
 	})
 }
 
-func rateLimitMiddleware(next http.Handler, config Config, metrics *observability.Metrics) http.Handler {
+// rateLimitMiddleware enforces a per-IP token-bucket limit and reaps idle entries in a
+// background goroutine. The goroutine exits when ctx is cancelled.
+func rateLimitMiddleware(ctx context.Context, next http.Handler, config Config, metrics *observability.Metrics, clientIP func(*http.Request) string) http.Handler {
 	type client struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
@@ -211,32 +224,44 @@ func rateLimitMiddleware(next http.Handler, config Config, metrics *observabilit
 		clients = make(map[string]*client)
 	)
 
-	// Background goroutine to remove old entries from the clients map.
+	// Reap idle entries until the parent context is cancelled.
 	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
 		for {
-			time.Sleep(time.Minute)
-			mu.Lock()
-			for ip, client := range clients {
-				if time.Since(client.lastSeen) > 5*time.Minute {
-					delete(clients, ip)
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				mu.Lock()
+				for ip, c := range clients {
+					if time.Since(c.lastSeen) > 5*time.Minute {
+						delete(clients, ip)
+					}
 				}
+				mu.Unlock()
 			}
-			mu.Unlock()
 		}
 	}()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := getClientIP(r, config)
+		ip := clientIP(r)
 
+		// Resolve/create the limiter under lock, then release it before the rate check.
+		// rate.Limiter has its own internal locking; holding mu across Allow() serializes
+		// all checks through one mutex.
 		mu.Lock()
-		if _, found := clients[ip]; !found {
-			clients[ip] = &client{
+		c, found := clients[ip]
+		if !found {
+			c = &client{
 				limiter: rate.NewLimiter(rate.Limit(config.RateLimitRPS), config.RateLimitRPS*2),
 			}
+			clients[ip] = c
 		}
-		clients[ip].lastSeen = time.Now()
-		if !clients[ip].limiter.Allow() {
-			mu.Unlock()
+		c.lastSeen = time.Now()
+		mu.Unlock()
+
+		if !c.limiter.Allow() {
 			if metrics != nil {
 				metrics.RecordRateLimitRejection()
 			}
@@ -248,44 +273,7 @@ func rateLimitMiddleware(next http.Handler, config Config, metrics *observabilit
 			})
 			return
 		}
-		mu.Unlock()
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func getClientIP(r *http.Request, config Config) string {
-	// Check if request is from a trusted proxy
-	remoteIP, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		remoteIP = r.RemoteAddr
-	}
-
-	trusted := false
-	if len(config.TrustedProxies) > 0 {
-		ip := net.ParseIP(remoteIP)
-		for _, cidr := range config.TrustedProxies {
-			if cidr.Contains(ip) {
-				trusted = true
-				break
-			}
-		}
-	}
-
-	// Only trust X-Forwarded-For from trusted proxies
-	if trusted {
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-			// Take the first IP in the chain (original client)
-			if idx := strings.Index(xff, ","); idx != -1 {
-				return strings.TrimSpace(xff[:idx])
-			}
-			return strings.TrimSpace(xff)
-		}
-
-		if xri := r.Header.Get("X-Real-IP"); xri != "" {
-			return strings.TrimSpace(xri)
-		}
-	}
-
-	return remoteIP
 }

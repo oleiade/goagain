@@ -16,9 +16,9 @@ type Config struct {
 	// Service identification
 	ServiceName string
 
-	// Metrics configuration
+	// Metrics configuration. Metrics are pushed via OTLP (or stdout in dev); there is
+	// no Prometheus scrape endpoint, so no path configuration is needed.
 	MetricsEnabled bool
-	MetricsPath    string
 }
 
 // LoadConfig loads observability configuration from environment variables.
@@ -28,7 +28,6 @@ func LoadConfig(defaultServiceName string) Config {
 		LogFormat:      "json",
 		ServiceName:    defaultServiceName,
 		MetricsEnabled: true,
-		MetricsPath:    "/metrics",
 	}
 
 	if level := os.Getenv("LOG_LEVEL"); level != "" {
@@ -53,10 +52,6 @@ func LoadConfig(defaultServiceName string) Config {
 	if enabled := os.Getenv("METRICS_ENABLED"); enabled != "" {
 		enabled = strings.ToLower(enabled)
 		config.MetricsEnabled = enabled != "false" && enabled != "0" && enabled != "no"
-	}
-
-	if path := os.Getenv("METRICS_PATH"); path != "" {
-		config.MetricsPath = path
 	}
 
 	return config

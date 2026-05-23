@@ -2,11 +2,10 @@ package observability
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"net/http"
-	"sync/atomic"
-	"time"
+
+	"github.com/google/uuid"
 )
 
 // contextKey is an unexported type used for context keys to avoid collisions.
@@ -17,45 +16,11 @@ const (
 	RequestIDKey contextKey = "request_id"
 )
 
-// requestIDCounter provides additional uniqueness within the same millisecond.
-var requestIDCounter uint32
-
-// GenerateRequestID generates a ULID-like request ID.
-// Format: 10 chars timestamp (ms) + 6 chars random/counter
+// GenerateRequestID returns a fresh UUIDv4 string. UUIDs give 122 bits of entropy and
+// well-understood collision properties; the previous bespoke ULID-ish encoding was
+// truncating both counter and random bits and silently dropping crypto/rand errors.
 func GenerateRequestID() string {
-	// Timestamp in milliseconds (base32 encoded)
-	// Safely convert int64 to uint64 (Unix timestamps are always positive after 1970)
-	var ts uint64
-	if millis := time.Now().UnixMilli(); millis >= 0 {
-		ts = uint64(millis)
-	}
-
-	// Counter + random for uniqueness
-	counter := atomic.AddUint32(&requestIDCounter, 1)
-	var randomBytes [2]byte
-	_, _ = rand.Read(randomBytes[:])
-	randomPart := uint16(randomBytes[0])<<8 | uint16(randomBytes[1])
-
-	// Combine counter and random
-	suffix := uint32(counter&0xFFFF)<<16 | uint32(randomPart)
-
-	// Base32 Crockford encoding (similar to ULID)
-	const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
-	result := make([]byte, 16)
-
-	// Encode timestamp (10 chars)
-	for i := 9; i >= 0; i-- {
-		result[i] = alphabet[ts&0x1F]
-		ts >>= 5
-	}
-
-	// Encode suffix (6 chars)
-	for i := 15; i >= 10; i-- {
-		result[i] = alphabet[suffix&0x1F]
-		suffix >>= 5
-	}
-
-	return string(result)
+	return uuid.NewString()
 }
 
 // RequestIDFromContext extracts the request ID from context.

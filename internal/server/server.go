@@ -3,16 +3,17 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/oleiade/goagain/internal/observability"
 )
+
+// shutdownTimeout caps how long graceful shutdown will wait for in-flight requests.
+const shutdownTimeout = 30 * time.Second
 
 // Server is a reusable HTTP server.
 type Server struct {
@@ -38,29 +39,34 @@ func New(name string, port int, logger *slog.Logger, router http.Handler) *Serve
 	}
 }
 
-// Run starts the server and handles graceful shutdown.
-func (s *Server) Run() {
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-
+// Run starts the server and blocks until ctx is cancelled or the server fails.
+// On ctx cancellation it performs a graceful shutdown bounded by shutdownTimeout.
+func (s *Server) Run(ctx context.Context) error {
+	serveErr := make(chan error, 1)
 	go func() {
 		observability.LogStartup(s.logger, s.name, s.Addr)
-		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			s.logger.Error("Server error", slog.String("error", err.Error()))
-			os.Exit(1)
+		if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			serveErr <- err
+			return
 		}
+		serveErr <- nil
 	}()
 
-	<-shutdown
-	observability.LogShutdown(s.logger, s.name)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err := s.Shutdown(ctx); err != nil {
-		s.logger.Error("Server forced to shutdown", slog.String("error", err.Error()))
-		os.Exit(1)
+	select {
+	case err := <-serveErr:
+		return fmt.Errorf("%s server: %w", s.name, err)
+	case <-ctx.Done():
 	}
 
-	s.logger.Info("Server stopped")
+	observability.LogShutdown(s.logger, s.name)
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := s.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("%s server forced shutdown: %w", s.name, err)
+	}
+
+	s.logger.Info("Server stopped", slog.String("name", s.name))
+	return nil
 }

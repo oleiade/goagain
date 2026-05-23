@@ -161,8 +161,13 @@ func (h *Handler) ListCards(w http.ResponseWriter, r *http.Request) {
 		Offset:    getIntParam(r, "offset", 0),
 	}
 
-	// Parse format legality filter
+	// Parse format legality filter. Reject unknown formats early instead of silently
+	// returning an empty result set (every card fails an unknown format's legality check).
 	if legalIn := query.Get("legal_in"); legalIn != "" {
+		if !domain.IsKnownFormat(domain.Format(legalIn)) {
+			writeError(w, http.StatusBadRequest, "unknown legal_in value: "+legalIn+" (valid: blitz, cc, commoner, ll, silver_age, upf)")
+			return
+		}
 		filter.LegalIn = domain.Format(legalIn)
 	}
 
@@ -185,7 +190,11 @@ func (h *Handler) ListCards(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetCard returns a single card by ID.
+// GetCard returns a single card by ID. The {id} path segment is matched against
+// UniqueID first; if no match is found it falls back to an exact (case-insensitive)
+// name lookup. Multiple cards can share a name (e.g. pitch-1/2/3 variants); when the
+// fallback finds more than one, the first map-iteration match is returned. Callers
+// that want all variants should use GET /v1/cards?name=...
 func (h *Handler) GetCard(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
@@ -195,13 +204,12 @@ func (h *Handler) GetCard(w http.ResponseWriter, r *http.Request) {
 
 	card := h.store.GetCardByID(id)
 	if card == nil {
-		// Try by name
+		// Fall back to exact-name lookup. See doc comment above for the multi-match caveat.
 		cards := h.store.GetCardsByName(id)
 		if len(cards) == 0 {
 			writeError(w, http.StatusNotFound, "card not found")
 			return
 		}
-		// Return first match if searching by name
 		card = cards[0]
 	}
 

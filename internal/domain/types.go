@@ -156,6 +156,17 @@ const (
 	FormatUPF       Format = "upf"
 )
 
+// IsKnownFormat reports whether f is one of the recognized game formats. Used by API
+// handlers to reject unknown ?legal_in= values up front rather than silently returning
+// empty results (GetLegality treats unknown formats as "not legal").
+func IsKnownFormat(f Format) bool {
+	switch f {
+	case FormatBlitz, FormatCC, FormatCommoner, FormatLL, FormatSilverAge, FormatUPF:
+		return true
+	}
+	return false
+}
+
 // Legality represents a card's legality status in a format.
 type Legality struct {
 	Format       Format `json:"format"`
@@ -226,18 +237,22 @@ func (c *Card) HasKeyword(keyword string) bool {
 	return slices.Contains(c.CardKeywords, keyword)
 }
 
+// classNames is the set of card type strings that represent a class.
+// Promoted to package scope to avoid re-allocating the map on every GetClass call
+// (called per-card on load and per-result during class-filtered searches).
+var classNames = map[string]struct{}{
+	"Generic": {}, "Warrior": {}, "Brute": {}, "Guardian": {},
+	"Ninja": {}, "Mechanologist": {}, "Ranger": {}, "Runeblade": {},
+	"Wizard": {}, "Illusionist": {}, "Elemental": {}, "Light": {},
+	"Shadow": {}, "Ice": {}, "Lightning": {}, "Earth": {},
+	"Mystic": {}, "Assassin": {}, "Shapeshifter": {}, "Bard": {},
+	"Adjudicator": {}, "Necromancer": {}, "Draconic": {}, "Royal": {},
+}
+
 // GetClass returns the class of the card (first type that is a class).
 func (c *Card) GetClass() string {
-	classes := map[string]bool{
-		"Generic": true, "Warrior": true, "Brute": true, "Guardian": true,
-		"Ninja": true, "Mechanologist": true, "Ranger": true, "Runeblade": true,
-		"Wizard": true, "Illusionist": true, "Elemental": true, "Light": true,
-		"Shadow": true, "Ice": true, "Lightning": true, "Earth": true,
-		"Mystic": true, "Assassin": true, "Shapeshifter": true, "Bard": true,
-		"Adjudicator": true, "Necromancer": true, "Draconic": true, "Royal": true,
-	}
 	for _, t := range c.Types {
-		if classes[t] {
+		if _, ok := classNames[t]; ok {
 			return t
 		}
 	}

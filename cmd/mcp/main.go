@@ -7,11 +7,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
 
 	mcp "github.com/mark3labs/mcp-go/server"
 	"github.com/oleiade/goagain/internal/data"
@@ -22,35 +24,40 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func run() (err error) {
 	mode := flag.String("mode", "stdio", "Transport mode: stdio or http")
 	port := flag.Int("port", 8081, "HTTP port (only used in http mode)")
 	flag.Parse()
 
-	// Check for environment variables
 	if envMode := os.Getenv("MCP_MODE"); envMode != "" {
 		*mode = envMode
 	}
 	if envPort := os.Getenv("MCP_PORT"); envPort != "" {
-		_, _ = fmt.Sscanf(envPort, "%d", port)
+		if p, atoiErr := strconv.Atoi(envPort); atoiErr == nil {
+			*port = p
+		}
 	}
 
-	// Handle SIGINT (CTRL+C) gracefully.
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// Set up OpenTelemetry first (before logger, so logs can flow to OTel).
 	otelConfig := observability.LoadOTelConfig("goagain-mcp")
 	otelShutdown, err := observability.SetupOTelSDK(ctx, otelConfig)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("setting up otel: %w", err)
 	}
-
-	// Handle shutdown properly so nothing leaks.
 	defer func() {
-		err = errors.Join(err, otelShutdown(context.Background()))
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		err = errors.Join(err, otelShutdown(shutdownCtx))
 	}()
 
-	// Initialize observability (logger and metrics use OTel now)
 	obsConfig := observability.LoadConfig("goagain-mcp")
 	logger := observability.SetupLogger(obsConfig)
 
@@ -62,48 +69,38 @@ func main() {
 	logger.Info("Loading card data...")
 	store, err := data.NewStore(metrics)
 	if err != nil {
-		logger.Error("Failed to load data", slog.String("error", err.Error()))
-		os.Exit(1)
+		return fmt.Errorf("loading data: %w", err)
 	}
 
-	dataStats, indexStats := store.Stats()
+	dataStats, _ := store.Stats()
 	observability.LogDataLoaded(logger, dataStats)
-
-	// Set data metrics
-	if metrics != nil {
-		metrics.SetDataStats(dataStats)
-		metrics.SetIndexStats(indexStats)
-	}
 
 	mcpServer := fabmcp.NewServer(store, logger, metrics)
 
 	switch *mode {
 	case "stdio":
-		runStdio(mcpServer, logger)
+		return runStdio(mcpServer, logger)
 	case "http":
-		runHTTP(mcpServer, *port, logger, metrics)
+		return runHTTP(ctx, mcpServer, *port, logger, metrics)
 	default:
-		logger.Error("Unknown mode", slog.String("mode", *mode))
-		os.Exit(1)
+		return fmt.Errorf("unknown mode %q (want stdio or http)", *mode)
 	}
 }
 
-func runStdio(mcpServer *fabmcp.Server, logger *slog.Logger) {
+func runStdio(mcpServer *fabmcp.Server, logger *slog.Logger) error {
 	observability.LogStartup(logger, "mcp-stdio", "stdio")
 	if err := mcp.ServeStdio(mcpServer.MCPServer()); err != nil {
-		logger.Error("Server error", slog.String("error", err.Error()))
-		os.Exit(1)
+		return fmt.Errorf("stdio server: %w", err)
 	}
+	return nil
 }
 
-func runHTTP(mcpServer *fabmcp.Server, port int, logger *slog.Logger, metrics *observability.Metrics) {
+func runHTTP(ctx context.Context, mcpServer *fabmcp.Server, port int, logger *slog.Logger, metrics *observability.Metrics) error {
 	httpServer := mcp.NewStreamableHTTPServer(mcpServer.MCPServer())
 
-	// Create a mux to add health endpoint
 	mux := http.NewServeMux()
 
-	// Health check endpoint
-	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status": "ok",
@@ -113,27 +110,20 @@ func runHTTP(mcpServer *fabmcp.Server, port int, logger *slog.Logger, metrics *o
 	// MCP endpoint (handles /mcp by default)
 	mux.Handle("/", httpServer)
 
-	// Apply middleware
 	var handler http.Handler = mux
 
-	// Metrics middleware for HTTP requests
 	if metrics != nil {
 		handler = metrics.MetricsMiddleware(mcpPathNormalizer())(handler)
 	}
 
-	// Logging middleware
 	handler = observability.LoggingMiddleware(logger, nil)(handler)
-
-	// Request ID middleware
 	handler = observability.RequestIDMiddleware(handler)
-
-	// Wrap with OTel HTTP tracing
 	handler = otelhttp.NewHandler(handler, "goagain-mcp",
 		otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
 	)
 
 	srv := server.New("mcp-http", port, logger, handler)
-	srv.Run()
+	return srv.Run(ctx)
 }
 
 // mcpPathNormalizer returns a path normalizer for MCP HTTP endpoints.

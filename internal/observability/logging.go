@@ -2,6 +2,7 @@ package observability
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -73,14 +74,16 @@ func (h *multiHandler) Enabled(ctx context.Context, level slog.Level) bool {
 }
 
 func (h *multiHandler) Handle(ctx context.Context, r slog.Record) error {
+	// Call every enabled handler regardless of intermediate failures: the whole point of a
+	// fan-out handler is durability via independence. Aggregate errors with errors.Join so
+	// the caller still sees what went wrong.
+	var errs error
 	for _, handler := range h.handlers {
 		if handler.Enabled(ctx, r.Level) {
-			if err := handler.Handle(ctx, r); err != nil {
-				return err
-			}
+			errs = errors.Join(errs, handler.Handle(ctx, r))
 		}
 	}
-	return nil
+	return errs
 }
 
 func (h *multiHandler) WithAttrs(attrs []slog.Attr) slog.Handler {

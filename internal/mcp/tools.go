@@ -65,6 +65,21 @@ func (s *Server) MCPServer() *server.MCPServer {
 // tracer is the OTel tracer for MCP tool invocations.
 var tracer = otel.Tracer("github.com/oleiade/goagain/mcp")
 
+// resultCountCtxKey is the context key for the per-invocation result-count recorder.
+type resultCountCtxKey struct{}
+
+// resultRecorder lets a handler publish the number of results it returned so
+// instrumentTool can record it on metrics, traces, and logs.
+type resultRecorder struct{ count int }
+
+// recordResultCount records n as the result count for the current tool invocation.
+// No-op if called outside an instrumented context.
+func recordResultCount(ctx context.Context, n int) {
+	if rec, ok := ctx.Value(resultCountCtxKey{}).(*resultRecorder); ok && rec != nil {
+		rec.count = n
+	}
+}
+
 // instrumentTool wraps a tool handler with tracing, metrics, and logging.
 func (s *Server) instrumentTool(toolName string, handler func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -77,6 +92,10 @@ func (s *Server) instrumentTool(toolName string, handler func(ctx context.Contex
 		)
 		defer span.End()
 
+		// Attach a recorder so handlers can report their real result count.
+		recorder := &resultRecorder{}
+		ctx = context.WithValue(ctx, resultCountCtxKey{}, recorder)
+
 		start := time.Now()
 
 		if s.metrics != nil {
@@ -88,13 +107,13 @@ func (s *Server) instrumentTool(toolName string, handler func(ctx context.Contex
 
 		duration := time.Since(start)
 
-		// Determine result count (if applicable)
-		resultCount := 0
-		if result != nil && !result.IsError {
-			resultCount = 1 // Default to 1 for single results
+		// Prefer the handler-recorded count; fall back to 1 for any single-item success
+		// (e.g. get_card, get_keyword) that didn't bother calling recordResultCount.
+		resultCount := recorder.count
+		if resultCount == 0 && err == nil && result != nil && !result.IsError {
+			resultCount = 1
 		}
 
-		// Add span attributes for the result
 		span.SetAttributes(
 			attribute.Int("mcp.tool.result_count", resultCount),
 			attribute.Float64("mcp.tool.duration_ms", float64(duration.Microseconds())/1000.0),
@@ -161,6 +180,7 @@ func (s *Server) registerSearchCards(mcpServer *server.MCPServer) {
 			results = append(results, formatCardSummary(card))
 		}
 
+		recordResultCount(ctx, len(results))
 		return mcp.NewToolResultText(formatJSON(map[string]any{
 			"count":   len(results),
 			"results": results,
@@ -215,6 +235,7 @@ func (s *Server) registerListSets(mcpServer *server.MCPServer) {
 			})
 		}
 
+		recordResultCount(ctx, len(results))
 		return mcp.NewToolResultText(formatJSON(map[string]any{
 			"count": len(results),
 			"sets":  results,
@@ -251,6 +272,7 @@ func (s *Server) registerSearchSets(mcpServer *server.MCPServer) {
 			})
 		}
 
+		recordResultCount(ctx, len(results))
 		return mcp.NewToolResultText(formatJSON(map[string]any{
 			"count": len(results),
 			"sets":  results,
@@ -292,6 +314,7 @@ func (s *Server) registerGetSet(mcpServer *server.MCPServer) {
 			}
 			result["cards"] = cardSummaries
 			result["card_count"] = len(cardSummaries)
+			recordResultCount(ctx, len(cardSummaries))
 		}
 
 		return mcp.NewToolResultText(formatJSON(result)), nil
@@ -329,6 +352,7 @@ func (s *Server) registerSearchCardText(mcpServer *server.MCPServer) {
 			results = append(results, formatCardSummary(card))
 		}
 
+		recordResultCount(ctx, len(results))
 		return mcp.NewToolResultText(formatJSON(map[string]any{
 			"query":   query,
 			"count":   len(results),
@@ -408,6 +432,7 @@ func (s *Server) registerListKeywords(mcpServer *server.MCPServer) {
 			})
 		}
 
+		recordResultCount(ctx, len(results))
 		return mcp.NewToolResultText(formatJSON(map[string]any{
 			"count":    len(results),
 			"keywords": results,

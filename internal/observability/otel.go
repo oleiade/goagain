@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -37,6 +38,11 @@ type OTelConfig struct {
 	// If empty, stdout exporters are used (development mode).
 	OTLPEndpoint string
 
+	// OTLPInsecure disables TLS on the OTLP exporters. Defaults to false (TLS on)
+	// when an OTLP endpoint is configured. Set OTEL_EXPORTER_OTLP_INSECURE=true
+	// for plaintext loopback collectors during development.
+	OTLPInsecure bool
+
 	// Export intervals
 	MetricInterval    time.Duration
 	TraceBatchTimeout time.Duration
@@ -67,6 +73,12 @@ func LoadOTelConfig(serviceName string) OTelConfig {
 	// Standard OTel env var for OTLP endpoint
 	if endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"); endpoint != "" {
 		config.OTLPEndpoint = endpoint
+	}
+
+	// Honor the standard OTEL_EXPORTER_OTLP_INSECURE env var. Default is TLS-on; users
+	// who want plaintext (e.g. a local collector on loopback) must opt in explicitly.
+	if v := strings.ToLower(os.Getenv("OTEL_EXPORTER_OTLP_INSECURE")); v == "true" || v == "1" || v == "yes" {
+		config.OTLPInsecure = true
 	}
 
 	return config
@@ -156,11 +168,11 @@ func newTracerProvider(ctx context.Context, config OTelConfig, res *resource.Res
 	var err error
 
 	if config.OTLPEndpoint != "" {
-		// Use OTLP HTTP exporter for production
-		exporter, err = otlptracehttp.New(ctx,
-			otlptracehttp.WithEndpoint(config.OTLPEndpoint),
-			otlptracehttp.WithInsecure(), // Use WithInsecure for non-TLS endpoints
-		)
+		opts := []otlptracehttp.Option{otlptracehttp.WithEndpoint(config.OTLPEndpoint)}
+		if config.OTLPInsecure {
+			opts = append(opts, otlptracehttp.WithInsecure())
+		}
+		exporter, err = otlptracehttp.New(ctx, opts...)
 	} else {
 		// Use stdout exporter for development
 		exporter, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
@@ -182,11 +194,11 @@ func newMeterProvider(ctx context.Context, config OTelConfig, res *resource.Reso
 	var err error
 
 	if config.OTLPEndpoint != "" {
-		// Use OTLP HTTP exporter for production
-		exporter, err = otlpmetrichttp.New(ctx,
-			otlpmetrichttp.WithEndpoint(config.OTLPEndpoint),
-			otlpmetrichttp.WithInsecure(),
-		)
+		opts := []otlpmetrichttp.Option{otlpmetrichttp.WithEndpoint(config.OTLPEndpoint)}
+		if config.OTLPInsecure {
+			opts = append(opts, otlpmetrichttp.WithInsecure())
+		}
+		exporter, err = otlpmetrichttp.New(ctx, opts...)
 	} else {
 		// Use stdout exporter for development
 		exporter, err = stdoutmetric.New(stdoutmetric.WithPrettyPrint())
@@ -208,11 +220,11 @@ func newLoggerProvider(ctx context.Context, config OTelConfig, res *resource.Res
 	var err error
 
 	if config.OTLPEndpoint != "" {
-		// Use OTLP HTTP exporter for production
-		exporter, err = otlploghttp.New(ctx,
-			otlploghttp.WithEndpoint(config.OTLPEndpoint),
-			otlploghttp.WithInsecure(),
-		)
+		opts := []otlploghttp.Option{otlploghttp.WithEndpoint(config.OTLPEndpoint)}
+		if config.OTLPInsecure {
+			opts = append(opts, otlploghttp.WithInsecure())
+		}
+		exporter, err = otlploghttp.New(ctx, opts...)
 	} else {
 		// Use stdout exporter for development
 		exporter, err = stdoutlog.New(stdoutlog.WithPrettyPrint())

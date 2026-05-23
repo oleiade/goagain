@@ -1,6 +1,7 @@
 package data
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/oleiade/goagain/internal/domain"
@@ -216,6 +217,51 @@ func TestGetKeywordByName(t *testing.T) {
 	kwLower := store.GetKeywordByName("go again")
 	if kwLower == nil {
 		t.Fatal("Case insensitive lookup failed for 'go again'")
+	}
+}
+
+// TestSearchCards_KeywordUnion exercises the partial-keyword path of SearchCards.
+// The pre-fix implementation only picked one matching keyword's bucket (chosen by
+// random map iteration order) and silently dropped cards under any other matching
+// keyword; results were both nondeterministic and incomplete. This test asserts
+// dedupe by UniqueID and that every returned card actually carries a keyword that
+// contains the needle.
+func TestSearchCards_KeywordUnion(t *testing.T) {
+	store, err := NewStore(nil)
+	if err != nil {
+		t.Fatalf("NewStore() error = %v", err)
+	}
+
+	needle := "go"
+	filter := CardFilter{Keyword: needle, Limit: 5000}
+	cards, total := store.SearchCards(filter)
+	if total == 0 {
+		t.Fatalf("expected at least one card matching keyword %q", needle)
+	}
+
+	seen := make(map[string]struct{}, len(cards))
+	for _, c := range cards {
+		if _, dup := seen[c.UniqueID]; dup {
+			t.Errorf("duplicate card in results: %s (%s)", c.UniqueID, c.Name)
+		}
+		seen[c.UniqueID] = struct{}{}
+
+		match := false
+		for _, kw := range c.CardKeywords {
+			if strings.Contains(strings.ToLower(kw), needle) {
+				match = true
+				break
+			}
+		}
+		if !match {
+			t.Errorf("card %s (%s) has no keyword containing %q: keywords=%v", c.UniqueID, c.Name, needle, c.CardKeywords)
+		}
+	}
+
+	// Determinism across calls (no implicit dependence on map iteration order).
+	_, total2 := store.SearchCards(filter)
+	if total != total2 {
+		t.Errorf("non-deterministic totals across calls: %d then %d", total, total2)
 	}
 }
 

@@ -16,6 +16,12 @@ import (
 var embeddedData embed.FS
 
 // Store holds all loaded card data with indexes for efficient lookup.
+//
+// Concurrency: a Store is read-only after NewStore returns. All methods and exported
+// fields are safe for concurrent use as long as callers do not mutate the slices or
+// maps. There is no mechanism for reloading data; if one is added, it must coordinate
+// with readers (e.g. via a sync.RWMutex or an atomic.Pointer[Store]) — Go panics on
+// concurrent map writes.
 type Store struct {
 	Cards     []*domain.Card
 	Sets      []*domain.Set
@@ -245,17 +251,23 @@ func (s *Store) SearchCards(filter CardFilter) ([]*domain.Card, int) {
 		candidates = s.CardsByType[filter.Type]
 		usingIndex = true
 	} else if filter.Keyword != "" {
-		// Keyword filter is partial, so we find the first matching keyword
-		// This is still better than a full scan.
+		// Partial keyword match: union all keywords whose name contains the query,
+		// deduplicated by card UniqueID. Map iteration order is random, so deduping
+		// is required for determinism as well as correctness.
+		needle := strings.ToLower(filter.Keyword)
+		seen := make(map[string]struct{})
 		for kw, cards := range s.CardsByKeyword {
-			if strings.Contains(strings.ToLower(kw), strings.ToLower(filter.Keyword)) {
-				// We can't just use this, we need to merge if multiple keywords match
-				// For simplicity, we'll take the first match for now. A more complex
-				// solution would merge and deduplicate.
-				candidates = cards
-				usingIndex = true
-				break
+			if !strings.Contains(strings.ToLower(kw), needle) {
+				continue
 			}
+			for _, c := range cards {
+				if _, dup := seen[c.UniqueID]; dup {
+					continue
+				}
+				seen[c.UniqueID] = struct{}{}
+				candidates = append(candidates, c)
+			}
+			usingIndex = true
 		}
 	} else if filter.SetID != "" {
 		candidates = s.CardsBySetID[strings.ToUpper(filter.SetID)]

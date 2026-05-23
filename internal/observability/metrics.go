@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -33,12 +34,15 @@ type Metrics struct {
 	mcpSessionsTotal        metric.Int64Counter
 	mcpSessionsActive       metric.Int64UpDownCounter
 
-	// Application metrics (using callbacks for gauges)
-	dataCardsTotal     int64
-	dataSetsTotal      int64
-	dataKeywordsTotal  int64
-	dataAbilitiesTotal int64
-	dataIndexEntries   map[string]int64
+	// Application metrics published via async gauges. The async-gauge callbacks fire on
+	// an SDK-managed goroutine, so all reads/writes must be safely concurrent with
+	// SetDataStats / SetIndexStats. Scalars use atomic.Int64; the index map is published
+	// via atomic.Pointer so the callback always sees a consistent snapshot.
+	dataCardsTotal     atomic.Int64
+	dataSetsTotal      atomic.Int64
+	dataKeywordsTotal  atomic.Int64
+	dataAbilitiesTotal atomic.Int64
+	dataIndexEntries   atomic.Pointer[map[string]int64]
 }
 
 // NewMetrics creates and registers all OpenTelemetry metrics.
@@ -48,9 +52,10 @@ func NewMetrics(serviceName string) *Metrics {
 	)
 
 	m := &Metrics{
-		meter:            meter,
-		dataIndexEntries: make(map[string]int64),
+		meter: meter,
 	}
+	empty := map[string]int64{}
+	m.dataIndexEntries.Store(&empty)
 
 	var err error
 
@@ -160,7 +165,7 @@ func (m *Metrics) registerDataGauges() {
 		metric.WithDescription("Total number of cards loaded"),
 		metric.WithUnit("{card}"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
-			o.Observe(m.dataCardsTotal)
+			o.Observe(m.dataCardsTotal.Load())
 			return nil
 		}),
 	)
@@ -173,7 +178,7 @@ func (m *Metrics) registerDataGauges() {
 		metric.WithDescription("Total number of sets loaded"),
 		metric.WithUnit("{set}"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
-			o.Observe(m.dataSetsTotal)
+			o.Observe(m.dataSetsTotal.Load())
 			return nil
 		}),
 	)
@@ -186,7 +191,7 @@ func (m *Metrics) registerDataGauges() {
 		metric.WithDescription("Total number of keywords loaded"),
 		metric.WithUnit("{keyword}"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
-			o.Observe(m.dataKeywordsTotal)
+			o.Observe(m.dataKeywordsTotal.Load())
 			return nil
 		}),
 	)
@@ -199,7 +204,7 @@ func (m *Metrics) registerDataGauges() {
 		metric.WithDescription("Total number of abilities loaded"),
 		metric.WithUnit("{ability}"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
-			o.Observe(m.dataAbilitiesTotal)
+			o.Observe(m.dataAbilitiesTotal.Load())
 			return nil
 		}),
 	)
@@ -207,12 +212,16 @@ func (m *Metrics) registerDataGauges() {
 		otel.Handle(err)
 	}
 
-	// Index entries gauge
+	// Index entries gauge. Reads the snapshot pointer once so the iteration is internally consistent.
 	_, err = m.meter.Int64ObservableGauge("goagain.data.index_entries",
 		metric.WithDescription("Total number of entries in each data index"),
 		metric.WithUnit("{entry}"),
 		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
-			for name, value := range m.dataIndexEntries {
+			snapshot := m.dataIndexEntries.Load()
+			if snapshot == nil {
+				return nil
+			}
+			for name, value := range *snapshot {
 				o.Observe(value, metric.WithAttributes(attribute.String("index_name", name)))
 			}
 			return nil
@@ -223,27 +232,30 @@ func (m *Metrics) registerDataGauges() {
 	}
 }
 
-// SetDataStats sets the application data metrics.
+// SetDataStats publishes data metrics. Safe to call concurrently with metric collection.
 func (m *Metrics) SetDataStats(stats map[string]int) {
 	if v, ok := stats["cards"]; ok {
-		m.dataCardsTotal = int64(v)
+		m.dataCardsTotal.Store(int64(v))
 	}
 	if v, ok := stats["sets"]; ok {
-		m.dataSetsTotal = int64(v)
+		m.dataSetsTotal.Store(int64(v))
 	}
 	if v, ok := stats["keywords"]; ok {
-		m.dataKeywordsTotal = int64(v)
+		m.dataKeywordsTotal.Store(int64(v))
 	}
 	if v, ok := stats["abilities"]; ok {
-		m.dataAbilitiesTotal = int64(v)
+		m.dataAbilitiesTotal.Store(int64(v))
 	}
 }
 
-// SetIndexStats sets the application index metrics.
+// SetIndexStats publishes index size metrics. Writes a fresh snapshot so the async gauge
+// callback never sees a partially-updated map.
 func (m *Metrics) SetIndexStats(stats map[string]int) {
+	snapshot := make(map[string]int64, len(stats))
 	for name, value := range stats {
-		m.dataIndexEntries[name] = int64(value)
+		snapshot[name] = int64(value)
 	}
+	m.dataIndexEntries.Store(&snapshot)
 }
 
 // MetricsMiddleware creates middleware that records HTTP metrics.
