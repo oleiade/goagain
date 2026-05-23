@@ -13,6 +13,10 @@ fab-mcp
 # Output of the go coverage tool
 *.out
 
+# Agents
+.mcp.json
+.claude/
+
 # IDE
 .idea/
 .vscode/
