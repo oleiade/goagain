@@ -161,11 +161,14 @@ func (h *Handler) ListCards(w http.ResponseWriter, r *http.Request) {
 		Offset:    getIntParam(r, "offset", 0),
 	}
 
-	// Parse format legality filter. Reject unknown formats early instead of silently
-	// returning an empty result set (every card fails an unknown format's legality check).
+	// Parse format legality filter. Reject unknown formats early instead of
+	// silently returning an empty result set (every card fails an unknown
+	// format's legality check). The error message does not echo the supplied
+	// value: today writeError JSON-encodes the body and that's safe, but a
+	// future maintainer switching to fmt.Fprintf would turn this into XSS.
 	if legalIn := query.Get("legal_in"); legalIn != "" {
 		if !domain.IsKnownFormat(domain.Format(legalIn)) {
-			writeError(w, http.StatusBadRequest, "unknown legal_in value: "+legalIn+" (valid: blitz, cc, commoner, ll, silver_age, upf)")
+			writeError(w, http.StatusBadRequest, "unknown legal_in value (valid: blitz, cc, commoner, ll, silver_age, upf)")
 			return
 		}
 		filter.LegalIn = domain.Format(legalIn)

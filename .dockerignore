@@ -1,0 +1,52 @@
+# The Dockerfile uses `COPY . .` in the builder stage, which copies the entire
+# build context. The final runtime image only carries the compiled binary, but
+# anything sensitive in the context still ends up in build logs, build caches
+# (GitHub Actions cache, BuildKit cache), and would leak immediately if the
+# Dockerfile ever moved to a single stage.
+
+# Version control
+.git
+.gitignore
+.gitmodules
+.github
+.jj
+
+# Agent / editor scratch
+.claude
+.mcp.json
+.vscode
+.idea
+*.swp
+*.swo
+
+# Local development
+.env
+.env.local
+.envrc
+
+# Secrets / credentials — never copy these into the build context
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+credentials.json
+service-account*.json
+
+# Tests and developer-only artifacts
+tests
+coverage*
+*.test
+*.out
+*.log
+
+# Submodule git directory (only the JSON data is needed by go:embed)
+data/upstream/.git
+
+# Docs that don't need to be in the build context
+*.md
+
+# Docker metadata files referenced only at build time outside the context
+Dockerfile
+docker-compose*.yml

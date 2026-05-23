@@ -55,8 +55,11 @@ func run() (err error) {
 	if err != nil {
 		return fmt.Errorf("setting up otel: %w", err)
 	}
+	// Timeout has to comfortably exceed the HTTP graceful-shutdown window
+	// (30s) plus a safety margin for the final OTLP batch, otherwise the
+	// last spans/metrics/logs are dropped on shutdown.
 	defer func() {
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 		defer cancel()
 		err = errors.Join(err, otelShutdown(shutdownCtx))
 	}()

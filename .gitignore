@@ -30,3 +30,16 @@ Thumbs.db
 # Local development
 .env
 .env.local
+.envrc
+
+# Secrets / credentials — never commit these. Listed even though they should
+# never live in the repo, because a developer dropping a local TLS cert or
+# service-account key to test OTLP-over-TLS would otherwise commit it silently.
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+credentials.json
+service-account*.json

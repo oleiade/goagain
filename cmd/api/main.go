@@ -46,9 +46,13 @@ func run() (err error) {
 	if err != nil {
 		return fmt.Errorf("setting up otel: %w", err)
 	}
-	// Flush exporters before exit. Runs on every return path because we propagate errors instead of os.Exit.
+	// Flush exporters before exit. Runs on every return path because we
+	// propagate errors instead of os.Exit. The timeout has to comfortably
+	// exceed the HTTP graceful-shutdown window (30s) plus a safety margin
+	// for the final OTLP batch, otherwise the last spans/metrics/logs are
+	// dropped on shutdown.
 	defer func() {
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 		defer cancel()
 		err = errors.Join(err, otelShutdown(shutdownCtx))
 	}()

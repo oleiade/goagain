@@ -1,38 +1,38 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Project Overview
+# Project Overview
 
 goagain is a Go REST API and MCP (Model Context Protocol) server providing access to Flesh and Blood card game data. It produces two binaries: an API server (port 8080) and an MCP server (port 8081).
+It is built on top of [the-fab-cube/flesh-and-blood-cards](https://github.com/the-fab-cube/flesh-and-blood-cards) card data set.
 
-## Commands
+# 1. Build
 
-```bash
-# Build
-go build -v ./...
+`go build -v ./...` # Build the project
 
-# Test (with race detector)
-go test -race -v ./...
+# 2. RUN
+`go run ./cmd/api`  # Run the API server
+`go run ./cmd/mcp`  # Run the MCP server
 
-# Lint
+# 3. Run tests
+
+go test -race -v ./... # Test (always with race detector)
+k6 run tests/k6/api.js  # api load performance tests
+k6 run tests/k6/trusted-proxies.js # functional tests
+ 
+# 4. Format and lint after every changes
+
+gofmt -w
 golangci-lint run
 
-# Run API server
-go run ./cmd/api
+# 5. Verify correctness and safety after every changes
 
-# Run MCP server
-go run ./cmd/mcp
+go vet ./...
+gosec ./...
+govulncheck ./...
 
-# Run k6 load tests (requires running API server)
-k6 run tests/k6/api.js
-k6 run tests/k6/trusted-proxies.js
+# 6. Sync card data from upstream submodule
 
-# Sync card data from upstream submodule
 ./scripts/sync-data.sh
-```
 
-## Architecture
+# Architecture
 
 ```
 cmd/
@@ -50,7 +50,7 @@ internal/
 - Store is loaded at startup and passed via dependency injection to handlers
 - Rate limiting uses per-IP token buckets; honors X-Forwarded-For only from TRUSTED_PROXIES
 
-## Configuration
+# Configuration
 
 Environment variables (see `.env.example`):
 - `PORT` - API server port (default: 8080)
