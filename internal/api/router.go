@@ -303,8 +303,18 @@ func (rw *recoverResponseWriter) Unwrap() http.ResponseWriter {
 	return rw.ResponseWriter
 }
 
-// rateLimitMiddleware enforces a per-IP token-bucket limit and reaps idle entries in a
-// background goroutine. The goroutine exits when ctx is cancelled.
+// maxRateLimitClients caps the per-IP map. The reaper evicts entries idle
+// >=5min only once a minute; without a cap, an attacker rotating source IPs
+// (cheap over IPv6, where one /64 yields 2^64 addresses) can add hundreds of
+// thousands of entries between sweeps. At ~100 B per entry this is ~5 MB at
+// the cap — bounded — and the global limiter below makes hitting the cap
+// require sustained throughput that the limiter is already throttling.
+const maxRateLimitClients = 50_000
+
+// rateLimitMiddleware enforces a global rate limit (a single backstop that
+// protects the map itself from rotating-IP floods) followed by a per-IP
+// token-bucket limit. Idle per-IP entries are reaped every minute by a
+// background goroutine that exits on ctx.Done().
 func rateLimitMiddleware(ctx context.Context, next http.Handler, config Config, metrics *observability.Metrics, clientIP func(*http.Request) string) http.Handler {
 	type client struct {
 		limiter  *rate.Limiter
@@ -315,6 +325,23 @@ func rateLimitMiddleware(ctx context.Context, next http.Handler, config Config, 
 		mu      sync.Mutex
 		clients = make(map[string]*client)
 	)
+
+	// Global tier: per-IP buckets are useless if an attacker can rotate IPs
+	// faster than the reaper runs. A second-tier global bucket capped at
+	// RPS*100 absorbs that pattern without forcing the per-IP map to grow.
+	globalLimiter := rate.NewLimiter(rate.Limit(config.RateLimitRPS*100), config.RateLimitRPS*200)
+
+	writeLimitExceeded := func(w http.ResponseWriter) {
+		if metrics != nil {
+			metrics.RecordRateLimitRejection()
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Retry-After", "1")
+		w.WriteHeader(http.StatusTooManyRequests)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": "rate limit exceeded",
+		})
+	}
 
 	// Reap idle entries until the parent context is cancelled.
 	go func() {
@@ -337,14 +364,37 @@ func rateLimitMiddleware(ctx context.Context, next http.Handler, config Config, 
 	}()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Global tier first: cheap, and a rejection here never grows the map.
+		if !globalLimiter.Allow() {
+			writeLimitExceeded(w)
+			return
+		}
+
 		ip := clientIP(r)
 
-		// Resolve/create the limiter under lock, then release it before the rate check.
-		// rate.Limiter has its own internal locking; holding mu across Allow() serializes
-		// all checks through one mutex.
+		// Resolve/create the limiter under lock, then release it before the
+		// rate check. rate.Limiter has its own internal locking; holding mu
+		// across Allow() would serialize all checks through one mutex.
 		mu.Lock()
 		c, found := clients[ip]
 		if !found {
+			// Cap enforcement: when the map is full, evict the entry with
+			// the oldest lastSeen. Linear scan is O(n) but only fires on
+			// overflow, by which point the global limiter is already
+			// throttling and the scan is rare.
+			if len(clients) >= maxRateLimitClients {
+				var (
+					oldestIP   string
+					oldestSeen time.Time
+				)
+				for k, v := range clients {
+					if oldestIP == "" || v.lastSeen.Before(oldestSeen) {
+						oldestIP = k
+						oldestSeen = v.lastSeen
+					}
+				}
+				delete(clients, oldestIP)
+			}
 			c = &client{
 				limiter: rate.NewLimiter(rate.Limit(config.RateLimitRPS), config.RateLimitRPS*2),
 			}
@@ -354,15 +404,7 @@ func rateLimitMiddleware(ctx context.Context, next http.Handler, config Config, 
 		mu.Unlock()
 
 		if !c.limiter.Allow() {
-			if metrics != nil {
-				metrics.RecordRateLimitRejection()
-			}
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			w.Header().Set("Retry-After", "1")
-			w.WriteHeader(http.StatusTooManyRequests)
-			_ = json.NewEncoder(w).Encode(map[string]string{
-				"error": "rate limit exceeded",
-			})
+			writeLimitExceeded(w)
 			return
 		}
 
