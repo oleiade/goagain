@@ -3,20 +3,16 @@ package api
 import (
 	"context"
 	_ "embed"
-	"encoding/json"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
-	"runtime/debug"
 	"strconv"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/oleiade/goagain/internal/data"
+	"github.com/oleiade/goagain/internal/middleware"
 	"github.com/oleiade/goagain/internal/observability"
-	"golang.org/x/time/rate"
 )
 
 //go:embed openapi.yaml
@@ -136,13 +132,13 @@ func NewRouter(ctx context.Context, store *data.Store, logger *slog.Logger, metr
 
 	// Security headers sit innermost so every response — including 429 from the
 	// rate limiter and 204 from CORS preflight — carries nosniff et al.
-	handler = securityHeadersMiddleware(handler)
+	handler = middleware.SecurityHeaders()(handler)
 
 	// CORS
 	handler = corsMiddleware(handler, config)
 
 	// Rate limiting (uses clientIP for trusted-proxy-aware key)
-	handler = rateLimitMiddleware(ctx, handler, config, metrics, clientIP)
+	handler = middleware.RateLimit(ctx, middleware.RateLimitConfig{RPS: config.RateLimitRPS}, metrics, clientIP)(handler)
 
 	// Metrics middleware
 	if metrics != nil {
@@ -153,13 +149,13 @@ func NewRouter(ctx context.Context, store *data.Store, logger *slog.Logger, metr
 	handler = observability.LoggingMiddleware(logger, clientIP)(handler)
 
 	// Request ID middleware (sets X-Request-ID on the response writer before any
-	// inner handler runs; recoverMiddleware reads it back from that header).
+	// inner handler runs; Recover reads it back from that header).
 	handler = observability.RequestIDMiddleware(handler)
 
-	// recoverMiddleware sits outermost so a panic anywhere downstream — including
-	// in RequestIDMiddleware itself — still produces a clean 500 instead of
+	// Recover sits outermost so a panic anywhere downstream — including in
+	// RequestIDMiddleware itself — still produces a clean 500 instead of
 	// crashing the goroutine and corrupting the HTTP/1.1 connection.
-	handler = recoverMiddleware(handler, logger)
+	handler = middleware.Recover(logger)(handler)
 
 	return handler
 }
@@ -235,179 +231,3 @@ func corsMiddleware(next http.Handler, config Config) http.Handler {
 	})
 }
 
-// securityHeadersMiddleware sets the small set of always-safe response headers.
-// We intentionally do NOT set Content-Security-Policy globally: /docs loads
-// the Scalar bundle from cdn.jsdelivr.net (version-pinned) and a strict CSP
-// would break it. For a JSON-only API there is no XSS sink to protect anyway;
-// nosniff is the load-bearing header here.
-func securityHeadersMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h := w.Header()
-		h.Set("X-Content-Type-Options", "nosniff")
-		h.Set("X-Frame-Options", "DENY")
-		h.Set("Referrer-Policy", "no-referrer")
-		next.ServeHTTP(w, r)
-	})
-}
-
-// recoverMiddleware catches panics from downstream handlers, logs them with
-// the request_id (read from the response header set by RequestIDMiddleware),
-// and writes a generic 500 if the inner handler did not already commit a
-// response. Without this, otelhttp does not recover panics and an HTTP/1.1
-// connection can be left in a corrupted state.
-func recoverMiddleware(next http.Handler, logger *slog.Logger) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		rw := &recoverResponseWriter{ResponseWriter: w}
-		defer func() {
-			rec := recover()
-			if rec == nil {
-				return
-			}
-			requestID := w.Header().Get("X-Request-ID")
-			logger.LogAttrs(r.Context(), slog.LevelError, "HTTP handler panic",
-				slog.Any("panic", rec),
-				slog.String("request_id", requestID),
-				slog.String("method", r.Method),
-				slog.String("path", r.URL.Path),
-				slog.String("stack", string(debug.Stack())),
-			)
-			if !rw.wroteHeader {
-				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte(`{"error":"internal server error"}`))
-			}
-		}()
-		next.ServeHTTP(rw, r)
-	})
-}
-
-// recoverResponseWriter is a minimal wrapper that tracks whether WriteHeader
-// (or Write — which implicitly calls WriteHeader(200)) has been called, so
-// recoverMiddleware knows whether it is safe to write its own 500 body.
-type recoverResponseWriter struct {
-	http.ResponseWriter
-	wroteHeader bool
-}
-
-func (rw *recoverResponseWriter) WriteHeader(code int) {
-	rw.wroteHeader = true
-	rw.ResponseWriter.WriteHeader(code)
-}
-
-func (rw *recoverResponseWriter) Write(b []byte) (int, error) {
-	rw.wroteHeader = true
-	return rw.ResponseWriter.Write(b)
-}
-
-func (rw *recoverResponseWriter) Unwrap() http.ResponseWriter {
-	return rw.ResponseWriter
-}
-
-// maxRateLimitClients caps the per-IP map. The reaper evicts entries idle
-// >=5min only once a minute; without a cap, an attacker rotating source IPs
-// (cheap over IPv6, where one /64 yields 2^64 addresses) can add hundreds of
-// thousands of entries between sweeps. At ~100 B per entry this is ~5 MB at
-// the cap — bounded — and the global limiter below makes hitting the cap
-// require sustained throughput that the limiter is already throttling.
-const maxRateLimitClients = 50_000
-
-// rateLimitMiddleware enforces a global rate limit (a single backstop that
-// protects the map itself from rotating-IP floods) followed by a per-IP
-// token-bucket limit. Idle per-IP entries are reaped every minute by a
-// background goroutine that exits on ctx.Done().
-func rateLimitMiddleware(ctx context.Context, next http.Handler, config Config, metrics *observability.Metrics, clientIP func(*http.Request) string) http.Handler {
-	type client struct {
-		limiter  *rate.Limiter
-		lastSeen time.Time
-	}
-
-	var (
-		mu      sync.Mutex
-		clients = make(map[string]*client)
-	)
-
-	// Global tier: per-IP buckets are useless if an attacker can rotate IPs
-	// faster than the reaper runs. A second-tier global bucket capped at
-	// RPS*100 absorbs that pattern without forcing the per-IP map to grow.
-	globalLimiter := rate.NewLimiter(rate.Limit(config.RateLimitRPS*100), config.RateLimitRPS*200)
-
-	writeLimitExceeded := func(w http.ResponseWriter) {
-		if metrics != nil {
-			metrics.RecordRateLimitRejection()
-		}
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Retry-After", "1")
-		w.WriteHeader(http.StatusTooManyRequests)
-		_ = json.NewEncoder(w).Encode(map[string]string{
-			"error": "rate limit exceeded",
-		})
-	}
-
-	// Reap idle entries until the parent context is cancelled.
-	go func() {
-		ticker := time.NewTicker(time.Minute)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				mu.Lock()
-				for ip, c := range clients {
-					if time.Since(c.lastSeen) > 5*time.Minute {
-						delete(clients, ip)
-					}
-				}
-				mu.Unlock()
-			}
-		}
-	}()
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Global tier first: cheap, and a rejection here never grows the map.
-		if !globalLimiter.Allow() {
-			writeLimitExceeded(w)
-			return
-		}
-
-		ip := clientIP(r)
-
-		// Resolve/create the limiter under lock, then release it before the
-		// rate check. rate.Limiter has its own internal locking; holding mu
-		// across Allow() would serialize all checks through one mutex.
-		mu.Lock()
-		c, found := clients[ip]
-		if !found {
-			// Cap enforcement: when the map is full, evict the entry with
-			// the oldest lastSeen. Linear scan is O(n) but only fires on
-			// overflow, by which point the global limiter is already
-			// throttling and the scan is rare.
-			if len(clients) >= maxRateLimitClients {
-				var (
-					oldestIP   string
-					oldestSeen time.Time
-				)
-				for k, v := range clients {
-					if oldestIP == "" || v.lastSeen.Before(oldestSeen) {
-						oldestIP = k
-						oldestSeen = v.lastSeen
-					}
-				}
-				delete(clients, oldestIP)
-			}
-			c = &client{
-				limiter: rate.NewLimiter(rate.Limit(config.RateLimitRPS), config.RateLimitRPS*2),
-			}
-			clients[ip] = c
-		}
-		c.lastSeen = time.Now()
-		mu.Unlock()
-
-		if !c.limiter.Allow() {
-			writeLimitExceeded(w)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}

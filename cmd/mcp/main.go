@@ -8,16 +8,19 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	mcp "github.com/mark3labs/mcp-go/server"
 	"github.com/oleiade/goagain/internal/data"
 	fabmcp "github.com/oleiade/goagain/internal/mcp"
+	"github.com/oleiade/goagain/internal/middleware"
 	"github.com/oleiade/goagain/internal/observability"
 	"github.com/oleiade/goagain/internal/server"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -101,7 +104,7 @@ func runHTTP(ctx context.Context, mcpServer *fabmcp.Server, port int, logger *sl
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status": "ok",
 		})
@@ -110,20 +113,65 @@ func runHTTP(ctx context.Context, mcpServer *fabmcp.Server, port int, logger *sl
 	// MCP endpoint (handles /mcp by default)
 	mux.Handle("/", httpServer)
 
-	var handler http.Handler = mux
+	// Share the same trusted-proxy and rate-limit semantics as the REST API.
+	// Without these, MCP HTTP mode would be the softest target on the deployment
+	// and would let any reachable client exhaust the search_card_text path.
+	trustedProxies := loadTrustedProxies(logger)
+	rps := loadRateLimitRPS()
+	clientIP := observability.GetClientIPFunc(trustedProxies)
 
+	var handler http.Handler = mux
+	handler = middleware.SecurityHeaders()(handler)
+	handler = middleware.RateLimit(ctx, middleware.RateLimitConfig{RPS: rps}, metrics, clientIP)(handler)
 	if metrics != nil {
 		handler = metrics.MetricsMiddleware(mcpPathNormalizer())(handler)
 	}
-
-	handler = observability.LoggingMiddleware(logger, nil)(handler)
+	handler = observability.LoggingMiddleware(logger, clientIP)(handler)
 	handler = observability.RequestIDMiddleware(handler)
+	handler = middleware.Recover(logger)(handler)
 	handler = otelhttp.NewHandler(handler, "goagain-mcp",
 		otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
 	)
 
 	srv := server.New("mcp-http", port, logger, handler)
 	return srv.Run(ctx)
+}
+
+// loadTrustedProxies mirrors api.LoadConfig's TRUSTED_PROXIES parse so MCP
+// can extract client IPs the same way the REST API does, without importing
+// internal/api (which would pull the entire REST handler graph and embedded
+// OpenAPI spec into the MCP binary). Refuses /0 CIDRs for the same reason
+// api.LoadConfig does — a one-line trust-the-world misconfiguration.
+func loadTrustedProxies(logger *slog.Logger) []*net.IPNet {
+	raw := os.Getenv("TRUSTED_PROXIES")
+	if raw == "" {
+		return nil
+	}
+	var out []*net.IPNet
+	for cidr := range strings.SplitSeq(raw, ",") {
+		cidr = strings.TrimSpace(cidr)
+		_, ipNet, err := net.ParseCIDR(cidr)
+		if err != nil {
+			sanitized := strings.ReplaceAll(strings.ReplaceAll(cidr, "\n", ""), "\r", "")
+			logger.Warn("Invalid CIDR in TRUSTED_PROXIES", slog.String("cidr", sanitized))
+			continue
+		}
+		if ones, _ := ipNet.Mask.Size(); ones == 0 {
+			logger.Warn("Refusing /0 CIDR in TRUSTED_PROXIES", slog.String("cidr", ipNet.String()))
+			continue
+		}
+		out = append(out, ipNet)
+	}
+	return out
+}
+
+func loadRateLimitRPS() int {
+	if v := os.Getenv("RATE_LIMIT_RPS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return 100
 }
 
 // mcpPathNormalizer returns a path normalizer for MCP HTTP endpoints.
