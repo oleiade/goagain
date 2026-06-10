@@ -55,6 +55,16 @@ internal/
 - Store is loaded at startup and passed via dependency injection to handlers
 - Rate limiting uses per-IP token buckets; honors X-Forwarded-For only from TRUSTED_PROXIES
 
+# Version control (jujutsu)
+
+This repo is managed with **jujutsu (`jj`)**, with git as an export backend. Use `jj`, not raw `git`, for commits and history.
+
+- The working copy **is** a commit (`@`). Every file edit is auto-snapshotted into `@` — there is no staging step.
+- **Before starting new work, run `jj status`.** If `@` already contains someone else's in-progress changes (or a described commit), run `jj new` to start a fresh empty change first. Otherwise your edits get snapshotted into that existing commit and conflated with unrelated work. This bit us once: edits meant to be their own commit were folded into an unrelated `chore(security)` commit and had to be split back out.
+- `git status` can report **clean** while the working copy has uncommitted changes (git sees only the last jj-exported commit, often as a detached HEAD). Trust `jj status`, never `git status`, to know the real state.
+- Use conventional-commit messages via `jj describe -m "..."`. Keep each commit to one logical change; `jj split` a commit that ended up mixing concerns.
+- Everything is reversible: `jj undo` reverts the last operation, `jj op log` shows the full history of operations to recover from. `jj evolog -r <rev>` shows a single commit's prior snapshots — useful for finding a clean boundary when splitting.
+
 # Configuration
 
 Environment variables (see `.env.example`):
