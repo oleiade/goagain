@@ -31,6 +31,11 @@ govulncheck ./...
 # 6. Sync card data from upstream submodule
 
 ./scripts/sync-data.sh
+# Fetches every upstream branch and merges them into a single unified data set:
+# `develop` is the base, and every other branch (any branch but main/develop) is
+# a set branch. Files are unioned by `unique_id` with set-branch-wins precedence,
+# then written to internal/data/english/. Requires jq.
+
 
 # Architecture
 
@@ -46,7 +51,7 @@ internal/
 ```
 
 **Key patterns:**
-- Card data is embedded via `go:embed` from `internal/data/english/` (sourced from `data/upstream/` git submodule)
+- Card data is embedded via `go:embed` from `internal/data/english/` (merged from all branches of the `data/upstream/` git submodule by `scripts/sync-data.sh`)
 - Store is loaded at startup and passed via dependency injection to handlers
 - Rate limiting uses per-IP token buckets; honors X-Forwarded-For only from TRUSTED_PROXIES
 

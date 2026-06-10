@@ -26,36 +26,19 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Check for upstream changes
-        id: check
+      - name: Fetch all upstream branches
         run: |
-          cd data/upstream
-          git fetch origin main
+          git -C data/upstream fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
 
-          LOCAL=$(git rev-parse HEAD)
-          REMOTE=$(git rev-parse origin/main)
-
-          echo "local=$LOCAL" >> $GITHUB_OUTPUT
-          echo "remote=$REMOTE" >> $GITHUB_OUTPUT
-
-          if [ "$LOCAL" != "$REMOTE" ] || [ "${{ inputs.force }}" == "true" ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Update submodule
-        if: steps.check.outputs.has_changes == 'true'
+      - name: Update submodule (develop base pin)
         run: |
           git submodule update --remote data/upstream
 
-      - name: Sync data files
-        if: steps.check.outputs.has_changes == 'true'
+      - name: Sync and merge data files
         run: |
           ./scripts/sync-data.sh
 
       - name: Create Pull Request
-        if: steps.check.outputs.has_changes == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -65,8 +48,13 @@ jobs:
             This PR updates the card data from the upstream repository.
 
             **Changes:**
-            - Submodule updated from `${{ steps.check.outputs.local }}` to `${{ steps.check.outputs.remote }}`
-            - Data files synced to `internal/data/english/`
+            - Data merged from `develop` (base) plus every set branch
+              (any branch other than `main`/`develop`), unioned by `unique_id`
+              with set-branch-wins precedence.
+            - Submodule pin advanced to the latest `develop` tip.
+            - Merged files written to `internal/data/english/`.
+
+            This PR opens only when the merged data actually changed.
 
             Please review the changes and merge if everything looks correct.
 

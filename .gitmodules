@@ -1,3 +1,4 @@
 [submodule "data/upstream"]
 	path = data/upstream
 	url = https://github.com/the-fab-cube/flesh-and-blood-cards.git
+	branch = develop
