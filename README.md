@@ -191,6 +191,7 @@ All configuration is via environment variables. See `.env.example` for a complet
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | _(none)_ | OTLP endpoint (e.g., `localhost:4318`). If unset, telemetry goes to stdout |
+| `OTEL_EXPORTER_OTLP_INSECURE` | `false` | Disable TLS on OTLP export. Set `true` only for plaintext/loopback collectors (e.g. a local Alloy) |
 | `OTEL_SERVICE_NAME` | `goagain-api` / `goagain-mcp` | Service name for traces, metrics, and logs |
 | `OTEL_SERVICE_VERSION` | `0.1.0` | Service version reported in telemetry |
 | `OTEL_ENVIRONMENT` | `development` | Deployment environment (e.g., `production`, `staging`) |
