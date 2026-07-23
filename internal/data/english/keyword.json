@@ -156,6 +156,12 @@
     "description_plain": ""
   },
   {
+    "unique_id": "9pNkgftJhWJTz6PwbNgz6",
+    "name": "Fragment",
+    "description": "",
+    "description_plain": ""
+  },
+  {
     "unique_id": "g6BD6HNFJBRDDdwD9kBWK",
     "name": "Freeze",
     "description": "A **frozen** object can't be played or activated.",
@@ -174,16 +180,16 @@
     "description_plain": ""
   },
   {
-    "unique_id": "mmf6BdTtrbCGrhdhg8K9g",
-    "name": "Go again",
-    "description": "**Go again** allows multiple actions to be played in a turn, when usually playing an action would use up your action point, and therefore end your turn. A card with **go again** gives the controller of that card or activated ability 1 action point when it resolves.",
-    "description_plain": "Go again allows multiple actions to be played in a turn, when usually playing an action would use up your action point, and therefore end your turn. A card with go again gives the controller of that card or activated ability 1 action point when it resolves."
-  },
-  {
     "unique_id": "cHmQnQCNKmq8BRJ6kT9ch",
     "name": "Go Fish",
     "description": "",
     "description_plain": ""
+  },
+  {
+    "unique_id": "mmf6BdTtrbCGrhdhg8K9g",
+    "name": "Go again",
+    "description": "**Go again** allows multiple actions to be played in a turn, when usually playing an action would use up your action point, and therefore end your turn. A card with **go again** gives the controller of that card or activated ability 1 action point when it resolves.",
+    "description_plain": "Go again allows multiple actions to be played in a turn, when usually playing an action would use up your action point, and therefore end your turn. A card with go again gives the controller of that card or activated ability 1 action point when it resolves."
   },
   {
     "unique_id": "JpQHgf9ttGqRjHjW6rgR8",
@@ -292,6 +298,12 @@
     "name": "Quell X",
     "description": "If your hero would be dealt damage, you may pay X{r} to prevent X of that damage. If you do, destroy this at the beginning of the end phase.",
     "description_plain": "If your hero would be dealt damage, you may pay X{r} to prevent X of that damage. If you do, destroy this at the beginning of the end phase."
+  },
+  {
+    "unique_id": "NLkthBP8zwtzRJW9pGJgR",
+    "name": "Quickstrike",
+    "description": "",
+    "description_plain": ""
   },
   {
     "unique_id": "CMkCBFwkdRTkckLfBwhjL",
@@ -444,6 +456,12 @@
     "description_plain": ""
   },
   {
+    "unique_id": "7LwDmkdN7fCfdFCMwbkzQ",
+    "name": "Usurp",
+    "description": "",
+    "description_plain": ""
+  },
+  {
     "unique_id": "k9Tt9gnfKHKFHHmq9LTnG",
     "name": "Wager",
     "description": "",
@@ -462,20 +480,20 @@
     "description_plain": ""
   },
   {
-    "unique_id": "9pNkgftJhWJTz6PwbNgz6",
-    "name": "Fragment",
+    "unique_id": "cLPWFpHzjGNJwtdpHC66t",
+    "name": "Decay",
     "description": "",
     "description_plain": ""
   },
   {
-    "unique_id": "NLkthBP8zwtzRJW9pGJgR",
-    "name": "Quickstrike",
+    "unique_id": "CrGrP7NKPGTfQ8Dt9pgwd",
+    "name": "Incarnate",
     "description": "",
     "description_plain": ""
   },
   {
-    "unique_id": "7LwDmkdN7fCfdFCMwbkzQ",
-    "name": "Usurp",
+    "unique_id": "PtKh7FrRjGMC9Q7L7DWLr",
+    "name": "Unique",
     "description": "",
     "description_plain": ""
   }

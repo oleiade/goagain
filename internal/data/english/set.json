@@ -1,5 +1,68 @@
 [
   {
+    "unique_id": "fRLqTzrtTt6mhdpGdcCWT",
+    "id": "1HB",
+    "name": "History Pack 1 - Bravo Blitz Deck",
+    "printings": [
+      {
+        "unique_id": "BhkfQrRQJ7GnQfzztRnwP",
+        "edition": "N",
+        "start_card_id": "1HB001",
+        "end_card_id": "1HB027",
+        "initial_release_date": "2023-02-24T00:00:00.000Z",
+        "out_of_print": true,
+        "card_database": "https://cards.fabtcg.com/products/bravo-blitz-deck/",
+        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
+        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "wD6NncrcKDRKnRNqJjPgq",
+    "id": "1HD",
+    "name": "History Pack 1 - Dash Blitz Deck",
+    "printings": [
+      {
+        "unique_id": "q6kjR6mpPBzHjBzrtgNGM",
+        "edition": "N",
+        "start_card_id": "1HD001",
+        "end_card_id": "1HD028",
+        "initial_release_date": "2023-02-24T00:00:00.000Z",
+        "out_of_print": true,
+        "card_database": "https://cards.fabtcg.com/products/dash-blitz-deck/",
+        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
+        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "zHtRgTHMPH7mM8q6p7CTb",
+    "id": "1HK",
+    "name": "History Pack 1 - Kano Blitz Deck",
+    "printings": [
+      {
+        "unique_id": "MmdgD8MJHLztJ9LDGbkHC",
+        "edition": "N",
+        "start_card_id": "1HK001",
+        "end_card_id": "1HK027",
+        "initial_release_date": "2023-02-24T00:00:00.000Z",
+        "out_of_print": true,
+        "card_database": "https://cards.fabtcg.com/products/kano-blitz-deck/",
+        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
+        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
+      }
+    ]
+  },
+  {
     "unique_id": "QpnqjpTwQfwKpmdtd8H6N",
     "id": "1HP",
     "name": "History Pack 1",
@@ -17,6 +80,69 @@
         "card_gallery": "https://fabtcg.com/resources/card-galleries/history-pack-1-en-booster/",
         "release_notes": null,
         "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_stacked.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "rPLfPFcgRwjLRtWcw79bd",
+    "id": "1HR",
+    "name": "History Pack 1 - Rhinar Blitz Deck",
+    "printings": [
+      {
+        "unique_id": "nBNJFJgBczMhcDCKhLcfp",
+        "edition": "N",
+        "start_card_id": "1HR001",
+        "end_card_id": "1HR026",
+        "initial_release_date": "2023-02-24T00:00:00.000Z",
+        "out_of_print": true,
+        "card_database": "https://cards.fabtcg.com/products/rhinar-blitz-deck/",
+        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
+        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "JDFpMrdk8nnBqcRMcWd6q",
+    "id": "1HT",
+    "name": "History Pack 1 - Dorinthea Blitz Deck",
+    "printings": [
+      {
+        "unique_id": "QhNfhKNmgM9FkGbkn6ngc",
+        "edition": "N",
+        "start_card_id": "1HT001",
+        "end_card_id": "1HT027",
+        "initial_release_date": "2023-02-24T00:00:00.000Z",
+        "out_of_print": true,
+        "card_database": "https://cards.fabtcg.com/products/dorinthea-blitz-deck/",
+        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
+        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "HGDbNN6KpqzWbzWDMHt9G",
+    "id": "1HV",
+    "name": "History Pack 1 - Viserai Blitz Deck",
+    "printings": [
+      {
+        "unique_id": "L8dWrCWgChDrbcwLNKKpr",
+        "edition": "N",
+        "start_card_id": "1HV001",
+        "end_card_id": "1HV027",
+        "initial_release_date": "2023-02-24T00:00:00.000Z",
+        "out_of_print": true,
+        "card_database": "https://cards.fabtcg.com/products/viserai-blitz-deck/",
+        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
+        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
       }
     ]
   },
@@ -189,6 +315,27 @@
     ]
   },
   {
+    "unique_id": "Gc8MTgWpCN6wJKdQqftFq",
+    "id": "ANQ",
+    "name": "Compendium of Rathe - Antiquity Pack",
+    "printings": [
+      {
+        "unique_id": "nLHMCLWr6cnfBgpFjKLWW",
+        "edition": "N",
+        "start_card_id": "ANQ000",
+        "end_card_id": "ANQ037",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/compendium-of-rathe-antiquity-pack",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
     "unique_id": "MhBtKrkKHNK7qzhDTHBj7",
     "id": "AOL",
     "name": "Armory Deck - Olympia",
@@ -218,7 +365,7 @@
         "unique_id": "mp7fBK9pBCF7kmBrGRdLF",
         "edition": "N",
         "start_card_id": "APR001",
-        "end_card_id": "APR003",
+        "end_card_id": "APR028",
         "initial_release_date": "2025-07-24T00:00:00.000Z",
         "out_of_print": false,
         "card_database": "https://cards.fabtcg.com/products/amory-deck-legends-prism-sculptor-of-arc-light/",
@@ -337,7 +484,7 @@
         "unique_id": "wjTzRJWPcWRMdC9mKhRbB",
         "edition": "N",
         "start_card_id": "ARR001",
-        "end_card_id": "ARR029",
+        "end_card_id": "ARR030",
         "initial_release_date": "2025-11-14T00:00:00.000Z",
         "out_of_print": false,
         "card_database": "https://cards.fabtcg.com/products/armory-deck-rhinar-reckless-rampage/",
@@ -497,6 +644,27 @@
     ]
   },
   {
+    "unique_id": "97NzCKbWKpHMkrJnDWR7M",
+    "id": "AZS",
+    "name": "Armory Deck - Zyggy",
+    "printings": [
+      {
+        "unique_id": "RcdBDWfRRkNdTcqkQJFmQ",
+        "edition": "N",
+        "start_card_id": "AZS001",
+        "end_card_id": "AZS031",
+        "initial_release_date": "2026-05-29T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/armory-deck-zyggy-starlight/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
     "unique_id": "mGktWtqzRWGPg6F78RFqh",
     "id": "BDD",
     "name": "Bravo Demo Deck",
@@ -505,7 +673,7 @@
         "unique_id": "gmN7PQHjkGMmpjBhDDDnN",
         "edition": "N",
         "start_card_id": "BDD001",
-        "end_card_id": "BDD018",
+        "end_card_id": "BDD019",
         "initial_release_date": "2025-08-08T00:00:00.000Z",
         "out_of_print": false,
         "card_database": "https://cards.fabtcg.com/products/bravo-demo-deck/",
@@ -658,6 +826,27 @@
         "card_database": null,
         "product_page": "https://fabtcg.com/en/products/booster-set/the-hunted-blitz-deck-collection/",
         "collectors_center": "https://fabtcg.com/en/collectors-centre/the-hunted/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "RWNBtLDFGTfQcPNpfGfrj",
+    "id": "CON",
+    "name": "Convention Promos",
+    "printings": [
+      {
+        "unique_id": "QcdhjPdnQr9HdMrt7fg7k",
+        "edition": "N",
+        "start_card_id": "CON001",
+        "end_card_id": "CON004",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
         "card_gallery": null,
         "release_notes": null,
         "set_logo": null
@@ -911,7 +1100,7 @@
         "unique_id": "j76qTFctqc8krqh9GKGmT",
         "edition": "N",
         "start_card_id": "FAB001",
-        "end_card_id": "FAB486",
+        "end_card_id": "FAB489",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -1016,7 +1205,7 @@
         "unique_id": "NrpJFBQQGpNM8D9w8BBfG",
         "edition": "N",
         "start_card_id": "HER000",
-        "end_card_id": "HER159",
+        "end_card_id": "HER170",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -1071,6 +1260,27 @@
     ]
   },
   {
+    "unique_id": "qJrJThgkdr8NzCz8C8hLM",
+    "id": "IAR",
+    "name": "??? Set 20 ???",
+    "printings": [
+      {
+        "unique_id": "qPHBhhWF8Mb8pfGcmztnF",
+        "edition": "N",
+        "start_card_id": "IAR000",
+        "end_card_id": "IAR666",
+        "initial_release_date": "2026-09-25T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/usurp-the-shadow-throne",
+        "product_page": "https://fabtcg.com/products/booster-set/iar/",
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://cdn.fabtcg.com/uploads/2026/07/usurp_the_shadow_throne_logo.png"
+      }
+    ]
+  },
+  {
     "unique_id": "NJH6TM8ThDgd6GKNbMbKm",
     "id": "IRA",
     "name": "Ira Welcome Deck",
@@ -1100,7 +1310,7 @@
         "unique_id": "hqBm7CnKjCWzKBQcph89t",
         "edition": "N",
         "start_card_id": "JDG000",
-        "end_card_id": "JDG044",
+        "end_card_id": "JDG062",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -1226,7 +1436,7 @@
         "unique_id": "Cbc6mFhKFNdqtCTJ9wwGJ",
         "edition": "N",
         "start_card_id": "LGS001",
-        "end_card_id": "LGS455",
+        "end_card_id": "LGS458",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -1442,6 +1652,27 @@
     ]
   },
   {
+    "unique_id": "JQhMnwghQ7WDjJbcPKDWc",
+    "id": "OMN",
+    "name": "Omens of the Third Age",
+    "printings": [
+      {
+        "unique_id": "8GLr9TQr8WMWCm8k8RRMC",
+        "edition": "N",
+        "start_card_id": "OMN000",
+        "end_card_id": "OMN250",
+        "initial_release_date": "2026-06-05T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/omens-of-the-third-age/",
+        "product_page": "https://omen.fabtcg.com/",
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://cdn.fabtcg.com/uploads/2026/03/omens_of_the_third_age_logo.png"
+      }
+    ]
+  },
+  {
     "unique_id": "cFBW9t8bwBJGHtjBFfHLK",
     "id": "OSC",
     "name": "Oscilio Blitz Deck",
@@ -1505,6 +1736,27 @@
     ]
   },
   {
+    "unique_id": "7KtM6HBqwGfTpGNmCQbt9",
+    "id": "PEN",
+    "name": "Compendium of Rathe",
+    "printings": [
+      {
+        "unique_id": "chrqPgpJpgRWztmTpTGFD",
+        "edition": "N",
+        "start_card_id": "PEN001",
+        "end_card_id": "PEN348",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/compendium-of-rathe/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
     "unique_id": "NGqTPbzCC6QN6Nkwjrthj",
     "id": "PSM",
     "name": "Prism Blitz Deck",
@@ -1526,27 +1778,6 @@
     ]
   },
   {
-    "unique_id": "kjKBztc6Jwkbjm8FfTgtL",
-    "id": "RIP",
-    "name": "Riptide Blitz Deck",
-    "printings": [
-      {
-        "unique_id": "9kpCbmwz6ckdqc8B7kKkC",
-        "edition": "N",
-        "start_card_id": "RIP001",
-        "end_card_id": "RIP030",
-        "initial_release_date": "2023-03-24T00:00:00.000Z",
-        "out_of_print": true,
-        "card_database": "https://cards.fabtcg.com/products/riptide-blitz-deck/",
-        "product_page": "https://fabtcg.com/en/products/booster-set/outsiders/outsiders-blitz-decks/",
-        "collectors_center": "https://fabtcg.com/en/collectors-centre/outsiders/",
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
     "unique_id": "BqWfHnHgd8BtnF9FHBNHG",
     "id": "RHI",
     "name": "Rhinar Blitz Deck",
@@ -1561,6 +1792,27 @@
         "card_database": "https://cards.fabtcg.com/products/rhinar-heavy-hitters-blitz-deck/",
         "product_page": "https://fabtcg.com/products/booster-set/heavy-hitters/heavy-hitters-blitz-decks/",
         "collectors_center": "https://fabtcg.com/collectors-centre/heavy-hitters/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "kjKBztc6Jwkbjm8FfTgtL",
+    "id": "RIP",
+    "name": "Riptide Blitz Deck",
+    "printings": [
+      {
+        "unique_id": "9kpCbmwz6ckdqc8B7kKkC",
+        "edition": "N",
+        "start_card_id": "RIP001",
+        "end_card_id": "RIP030",
+        "initial_release_date": "2023-03-24T00:00:00.000Z",
+        "out_of_print": true,
+        "card_database": "https://cards.fabtcg.com/products/riptide-blitz-deck/",
+        "product_page": "https://fabtcg.com/en/products/booster-set/outsiders/outsiders-blitz-decks/",
+        "collectors_center": "https://fabtcg.com/en/collectors-centre/outsiders/",
         "card_gallery": null,
         "release_notes": null,
         "set_logo": null
@@ -1631,6 +1883,174 @@
     ]
   },
   {
+    "unique_id": "Rjj6Bmh9qqzdJdd7ckQbg",
+    "id": "SAR",
+    "name": "Silver Age Chapter 2 - Arakni, Web of Deceit",
+    "printings": [
+      {
+        "unique_id": "8z8ghJpGPjjNkggqCCfN6",
+        "edition": "N",
+        "start_card_id": "SAR001",
+        "end_card_id": "SAR039",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-arakni-web-of-deceit/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "Q9J7zq9bG8ppKB8THHFMC",
+    "id": "SAZ",
+    "name": "Silver Age Chapter 2 - Azalea",
+    "printings": [
+      {
+        "unique_id": "RcFcBBH7DJCfNpmmKWkCM",
+        "edition": "N",
+        "start_card_id": "SAZ001",
+        "end_card_id": "SAZ036",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-azalea/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "kd7Wk96zd6Kz66nWhBwJJ",
+    "id": "SBA",
+    "name": "Silver Age Chapter 3 - Briar",
+    "printings": [
+      {
+        "unique_id": "gmnnWKnNPkbzpKMpDQFTq",
+        "edition": "N",
+        "start_card_id": "SBA001",
+        "end_card_id": "SBA036",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "PWfChPBFJPrP8mwBKctN8",
+    "id": "SBL",
+    "name": "Silver Age Chapter 3 - Boltyn",
+    "printings": [
+      {
+        "unique_id": "HG7WFD9WnQ8QTGLqNQ7p8",
+        "edition": "N",
+        "start_card_id": "SBL001",
+        "end_card_id": "SBL036",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "9HNctTgFBzmpGMqfm9htF",
+    "id": "SBR",
+    "name": "Silver Age Chapter 1 - Bravo, Flattering Showman",
+    "printings": [
+      {
+        "unique_id": "PmGwtQCKnrHmhkLmnbCW8",
+        "edition": "N",
+        "start_card_id": "SBR001",
+        "end_card_id": "SBR036",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-bravo-flattering-showman/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "cGzCRBm9nbNfLJjjDrHHT",
+    "id": "SBZ",
+    "name": "Silver Age Chapter 3 - Blaze, Firemind",
+    "printings": [
+      {
+        "unique_id": "HDwnmrzzm87wNgMkgbMp8",
+        "edition": "N",
+        "start_card_id": "SBZ001",
+        "end_card_id": "SBZ033",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "QGpqWbPMDWPn7RKMJFtjP",
+    "id": "SDA",
+    "name": "Silver Age Chapter 1 - Dash",
+    "printings": [
+      {
+        "unique_id": "6hTbnzjHTGKWMGNr7jWHq",
+        "edition": "N",
+        "start_card_id": "SDA001",
+        "end_card_id": "SDA034",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-dash/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "HfpzLjmDRw6qDGMGWc7N6",
+    "id": "SDO",
+    "name": "Silver Age Chapter 2 - Dorinthea",
+    "printings": [
+      {
+        "unique_id": "RMFGGLpCHGfDkFCfCPDTF",
+        "edition": "N",
+        "start_card_id": "SDO001",
+        "end_card_id": "SDO036",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-dorinthea/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
     "unique_id": "wgpfKBFMGm8WqjnkbBkcw",
     "id": "SEA",
     "name": "High Seas",
@@ -1648,6 +2068,132 @@
         "card_gallery": null,
         "release_notes": null,
         "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/high_seas_logo_noglow.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "NJtgtNMRWjppPT9rFbcJp",
+    "id": "SEN",
+    "name": "Silver Age Chapter 2 - Enigma",
+    "printings": [
+      {
+        "unique_id": "chn7ptqRwMGHr6DLNKtkC",
+        "edition": "N",
+        "start_card_id": "SEN001",
+        "end_card_id": "SEN037",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-enigma/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "gcm9RnTbGttwffjFhTzFP",
+    "id": "SFA",
+    "name": "Silver Age Chapter 2 - Fai",
+    "printings": [
+      {
+        "unique_id": "6FgCqjRwr7TJg6jmJgdbj",
+        "edition": "N",
+        "start_card_id": "SFA001",
+        "end_card_id": "SFA037",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-fai/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "bwPNhzGJBHmdTFTmHdqjc",
+    "id": "SGB",
+    "name": "Silver Age Chapter 3 - Gravy Bones",
+    "printings": [
+      {
+        "unique_id": "dNbpTLTdR78TB6WMw6WgB",
+        "edition": "N",
+        "start_card_id": "SGB001",
+        "end_card_id": "SGB035",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "jzP8pqcCmfgWD7tmGNRcL",
+    "id": "SIY",
+    "name": "Silver Age Chapter 1 - Iyslander",
+    "printings": [
+      {
+        "unique_id": "RhNJ7wwHM9Pj68P66FtzQ",
+        "edition": "N",
+        "start_card_id": "SIY001",
+        "end_card_id": "SIY035",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-iyslander/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "TKgjzj6bqCdpBFtWdTDbB",
+    "id": "SKA",
+    "name": "Silver Age Chapter 1 - Kayo",
+    "printings": [
+      {
+        "unique_id": "jmgd6kK86ddBQbqpb8jL9",
+        "edition": "N",
+        "start_card_id": "SKA001",
+        "end_card_id": "SKA036",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-kayo/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "pkHkHrrTm66K9BCRKDfGp",
+    "id": "SLY",
+    "name": "Silver Age Chapter 3 - Lyath Goldmane",
+    "printings": [
+      {
+        "unique_id": "r7pHJ9Bw6KCtRR77rhFCL",
+        "edition": "N",
+        "start_card_id": "SLY001",
+        "end_card_id": "SLY035",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
       }
     ]
   },
@@ -1690,6 +2236,27 @@
         "card_gallery": null,
         "release_notes": null,
         "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/super_slam_logo.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "jc6DftRfhMjf9rP8g8wGH",
+    "id": "SVI",
+    "name": "Silver Age Chapter 1 - Viserai",
+    "printings": [
+      {
+        "unique_id": "rBDPnkJTCffg7dn9zwGbb",
+        "edition": "N",
+        "start_card_id": "SVI001",
+        "end_card_id": "SVI034",
+        "initial_release_date": "2026-02-13T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-viserai/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
       }
     ]
   },
@@ -1753,6 +2320,27 @@
         "card_gallery": null,
         "release_notes": "https://fabtcg.com/en/resources/rules-and-policy-center/release-notes/rosetta-1st-strike/",
         "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1stk_terra_logo.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "hPLgdFQPqGfn8GpJ8Rqg6",
+    "id": "TNP",
+    "name": "Tournament Pack",
+    "printings": [
+      {
+        "unique_id": "9qTTzdG9cWdHPjN86TWJ7",
+        "edition": "N",
+        "start_card_id": "TNP001",
+        "end_card_id": "TNP030",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
       }
     ]
   },
@@ -1862,6 +2450,27 @@
     ]
   },
   {
+    "unique_id": "FcJD8jDhLNKKtBDhLnNLt",
+    "id": "WOD",
+    "name": "Arakni, Web of Deceit Blitz Deck",
+    "printings": [
+      {
+        "unique_id": "wwRLKLgMjRWNfjtGBJzLC",
+        "edition": "N",
+        "start_card_id": "WOD001",
+        "end_card_id": "WOD034",
+        "initial_release_date": "2025-01-31T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": "https://fabtcg.com/en/products/booster-set/the-hunted-blitz-deck-collection/",
+        "collectors_center": "https://fabtcg.com/en/collectors-centre/the-hunted/",
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
     "unique_id": "z76hC7kM6jcNzPgqkTwqf",
     "id": "WTR",
     "name": "Welcome to Rathe",
@@ -1893,27 +2502,6 @@
         "card_gallery": "https://fabtcg.com/resources/card-galleries/welcome-rathe-unlimited-booster/",
         "release_notes": "https://fabtcg.com/en/resources/rules-and-policy-center/release-notes/welcome-rathe/",
         "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/wtr_logo.original.png"
-      }
-    ]
-  },
-  {
-    "unique_id": "FcJD8jDhLNKKtBDhLnNLt",
-    "id": "WOD",
-    "name": "Arakni, Web of Deceit Blitz Deck",
-    "printings": [
-      {
-        "unique_id": "wwRLKLgMjRWNfjtGBJzLC",
-        "edition": "N",
-        "start_card_id": "WOD001",
-        "end_card_id": "WOD034",
-        "initial_release_date": "2025-01-31T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": null,
-        "product_page": "https://fabtcg.com/en/products/booster-set/the-hunted-blitz-deck-collection/",
-        "collectors_center": "https://fabtcg.com/en/collectors-centre/the-hunted/",
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
       }
     ]
   },
@@ -1956,447 +2544,6 @@
         "card_gallery": "https://fabtcg.com/resources/card-galleries/part-the-mistveil-collection-box/",
         "release_notes": null,
         "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "fRLqTzrtTt6mhdpGdcCWT",
-    "id": "1HB",
-    "name": "History Pack 1 - Bravo Blitz Deck",
-    "printings": [
-      {
-        "unique_id": "BhkfQrRQJ7GnQfzztRnwP",
-        "edition": "N",
-        "start_card_id": "1HB001",
-        "end_card_id": "1HB027",
-        "initial_release_date": "2023-02-24T00:00:00.000Z",
-        "out_of_print": true,
-        "card_database": "https://cards.fabtcg.com/products/bravo-blitz-deck/",
-        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
-        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
-      }
-    ]
-  },
-  {
-    "unique_id": "wD6NncrcKDRKnRNqJjPgq",
-    "id": "1HD",
-    "name": "History Pack 1 - Dash Blitz Deck",
-    "printings": [
-      {
-        "unique_id": "q6kjR6mpPBzHjBzrtgNGM",
-        "edition": "N",
-        "start_card_id": "1HD001",
-        "end_card_id": "1HD028",
-        "initial_release_date": "2023-02-24T00:00:00.000Z",
-        "out_of_print": true,
-        "card_database": "https://cards.fabtcg.com/products/dash-blitz-deck/",
-        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
-        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
-      }
-    ]
-  },
-  {
-    "unique_id": "JDFpMrdk8nnBqcRMcWd6q",
-    "id": "1HT",
-    "name": "History Pack 1 - Dorinthea Blitz Deck",
-    "printings": [
-      {
-        "unique_id": "QhNfhKNmgM9FkGbkn6ngc",
-        "edition": "N",
-        "start_card_id": "1HT001",
-        "end_card_id": "1HT027",
-        "initial_release_date": "2023-02-24T00:00:00.000Z",
-        "out_of_print": true,
-        "card_database": "https://cards.fabtcg.com/products/dorinthea-blitz-deck/",
-        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
-        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
-      }
-    ]
-  },
-  {
-    "unique_id": "zHtRgTHMPH7mM8q6p7CTb",
-    "id": "1HK",
-    "name": "History Pack 1 - Kano Blitz Deck",
-    "printings": [
-      {
-        "unique_id": "MmdgD8MJHLztJ9LDGbkHC",
-        "edition": "N",
-        "start_card_id": "1HK001",
-        "end_card_id": "1HK027",
-        "initial_release_date": "2023-02-24T00:00:00.000Z",
-        "out_of_print": true,
-        "card_database": "https://cards.fabtcg.com/products/kano-blitz-deck/",
-        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
-        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
-      }
-    ]
-  },
-  {
-    "unique_id": "rPLfPFcgRwjLRtWcw79bd",
-    "id": "1HR",
-    "name": "History Pack 1 - Rhinar Blitz Deck",
-    "printings": [
-      {
-        "unique_id": "nBNJFJgBczMhcDCKhLcfp",
-        "edition": "N",
-        "start_card_id": "1HR001",
-        "end_card_id": "1HR026",
-        "initial_release_date": "2023-02-24T00:00:00.000Z",
-        "out_of_print": true,
-        "card_database": "https://cards.fabtcg.com/products/rhinar-blitz-deck/",
-        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
-        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
-      }
-    ]
-  },
-  {
-    "unique_id": "HGDbNN6KpqzWbzWDMHt9G",
-    "id": "1HV",
-    "name": "History Pack 1 - Viserai Blitz Deck",
-    "printings": [
-      {
-        "unique_id": "L8dWrCWgChDrbcwLNKKpr",
-        "edition": "N",
-        "start_card_id": "1HV001",
-        "end_card_id": "1HV027",
-        "initial_release_date": "2023-02-24T00:00:00.000Z",
-        "out_of_print": true,
-        "card_database": "https://cards.fabtcg.com/products/viserai-blitz-deck/",
-        "product_page": "https://fabtcg.com/articles/history-pack-1-blitz-decks/",
-        "collectors_center": "https://fabtcg.com/collectors-centre/history-pack-1/",
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/1hp_blitz_logo.original.png"
-      }
-    ]
-  },
-  {
-    "unique_id": "7KtM6HBqwGfTpGNmCQbt9",
-    "id": "PEN",
-    "name": "Compendium of Rathe",
-    "printings": [
-      {
-        "unique_id": "chrqPgpJpgRWztmTpTGFD",
-        "edition": "N",
-        "start_card_id": "PEN001",
-        "end_card_id": "PEN348",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/compendium-of-rathe/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "Rjj6Bmh9qqzdJdd7ckQbg",
-    "id": "SAR",
-    "name": "Silver Age Chapter 2 - Arakni, Web of Deceit",
-    "printings": [
-      {
-        "unique_id": "8z8ghJpGPjjNkggqCCfN6",
-        "edition": "N",
-        "start_card_id": "SAR001",
-        "end_card_id": "SAR039",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-arakni-web-of-deceit/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "Q9J7zq9bG8ppKB8THHFMC",
-    "id": "SAZ",
-    "name": "Silver Age Chapter 2 - Azalea",
-    "printings": [
-      {
-        "unique_id": "RcFcBBH7DJCfNpmmKWkCM",
-        "edition": "N",
-        "start_card_id": "SAZ001",
-        "end_card_id": "SAZ036",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-azalea/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "9HNctTgFBzmpGMqfm9htF",
-    "id": "SBR",
-    "name": "Silver Age Chapter 1 - Bravo, Flattering Showman",
-    "printings": [
-      {
-        "unique_id": "PmGwtQCKnrHmhkLmnbCW8",
-        "edition": "N",
-        "start_card_id": "SBR001",
-        "end_card_id": "SBR036",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-bravo-flattering-showman/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "QGpqWbPMDWPn7RKMJFtjP",
-    "id": "SDA",
-    "name": "Silver Age Chapter 1 - Dash",
-    "printings": [
-      {
-        "unique_id": "6hTbnzjHTGKWMGNr7jWHq",
-        "edition": "N",
-        "start_card_id": "SDA001",
-        "end_card_id": "SDA034",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-dash/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "HfpzLjmDRw6qDGMGWc7N6",
-    "id": "SDO",
-    "name": "Silver Age Chapter 2 - Dorinthea",
-    "printings": [
-      {
-        "unique_id": "RMFGGLpCHGfDkFCfCPDTF",
-        "edition": "N",
-        "start_card_id": "SDO001",
-        "end_card_id": "SDO036",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-dorinthea/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "NJtgtNMRWjppPT9rFbcJp",
-    "id": "SEN",
-    "name": "Silver Age Chapter 2 - Enigma",
-    "printings": [
-      {
-        "unique_id": "chn7ptqRwMGHr6DLNKtkC",
-        "edition": "N",
-        "start_card_id": "SEN001",
-        "end_card_id": "SEN037",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-enigma/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "gcm9RnTbGttwffjFhTzFP",
-    "id": "SFA",
-    "name": "Silver Age Chapter 2 - Fai",
-    "printings": [
-      {
-        "unique_id": "6FgCqjRwr7TJg6jmJgdbj",
-        "edition": "N",
-        "start_card_id": "SFA001",
-        "end_card_id": "SFA037",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-fai/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "jzP8pqcCmfgWD7tmGNRcL",
-    "id": "SIY",
-    "name": "Silver Age Chapter 1 - Iyslander",
-    "printings": [
-      {
-        "unique_id": "RhNJ7wwHM9Pj68P66FtzQ",
-        "edition": "N",
-        "start_card_id": "SIY001",
-        "end_card_id": "SIY035",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-iyslander/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "TKgjzj6bqCdpBFtWdTDbB",
-    "id": "SKA",
-    "name": "Silver Age Chapter 1 - Kayo",
-    "printings": [
-      {
-        "unique_id": "jmgd6kK86ddBQbqpb8jL9",
-        "edition": "N",
-        "start_card_id": "SKA001",
-        "end_card_id": "SKA036",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-kayo/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "jc6DftRfhMjf9rP8g8wGH",
-    "id": "SVI",
-    "name": "Silver Age Chapter 1 - Viserai",
-    "printings": [
-      {
-        "unique_id": "rBDPnkJTCffg7dn9zwGbb",
-        "edition": "N",
-        "start_card_id": "SVI001",
-        "end_card_id": "SVI034",
-        "initial_release_date": "2026-02-13T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/silver-age-chapter-1-viserai/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "hPLgdFQPqGfn8GpJ8Rqg6",
-    "id": "TNP",
-    "name": "Tournament Pack",
-    "printings": [
-      {
-        "unique_id": "9qTTzdG9cWdHPjN86TWJ7",
-        "edition": "N",
-        "start_card_id": "TNP001",
-        "end_card_id": "TNP030",
-        "initial_release_date": null,
-        "out_of_print": false,
-        "card_database": null,
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "97NzCKbWKpHMkrJnDWR7M",
-    "id": "AZS",
-    "name": "Armory Deck - Zyggy",
-    "printings": [
-      {
-        "unique_id": "RcdBDWfRRkNdTcqkQJFmQ",
-        "edition": "N",
-        "start_card_id": "AZS001",
-        "end_card_id": "AZS017",
-        "initial_release_date": "2026-05-29T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/armory-deck-zyggy-starlight/",
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "qJrJThgkdr8NzCz8C8hLM",
-    "id": "IAR",
-    "name": "??? Set 20 ???",
-    "printings": [
-      {
-        "unique_id": "qPHBhhWF8Mb8pfGcmztnF",
-        "edition": "N",
-        "start_card_id": "IAR145",
-        "end_card_id": "IAR222",
-        "initial_release_date": null,
-        "out_of_print": false,
-        "card_database": null,
-        "product_page": null,
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": null
-      }
-    ]
-  },
-  {
-    "unique_id": "JQhMnwghQ7WDjJbcPKDWc",
-    "id": "OMN",
-    "name": "Omens of the Third Age",
-    "printings": [
-      {
-        "unique_id": "8GLr9TQr8WMWCm8k8RRMC",
-        "edition": "N",
-        "start_card_id": "OMN000",
-        "end_card_id": "OMN250",
-        "initial_release_date": "2026-06-05T00:00:00.000Z",
-        "out_of_print": false,
-        "card_database": "https://cardvault.fabtcg.com/products/omens-of-the-third-age/",
-        "product_page": "https://omen.fabtcg.com/",
-        "collectors_center": null,
-        "card_gallery": null,
-        "release_notes": null,
-        "set_logo": "https://cdn.fabtcg.com/uploads/2026/03/omens_of_the_third_age_logo.png"
       }
     ]
   }

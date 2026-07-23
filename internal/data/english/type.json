@@ -284,6 +284,10 @@
     "name": "Off-Hand"
   },
   {
+    "unique_id": "FMrBnhG7CjFb9r9rGBJQJ",
+    "name": "Omens of the Third Age"
+  },
+  {
     "unique_id": "dqzwT8hJbqChq7btnP7R8",
     "name": "Orb"
   },
@@ -406,9 +410,5 @@
   {
     "unique_id": "QPtmrBGhLFbnpFMQznnwH",
     "name": "Young"
-  },
-  {
-    "unique_id": "FMrBnhG7CjFb9r9rGBJQJ",
-    "name": "Omens of the Third Age"
   }
 ]
