@@ -183,7 +183,7 @@ func newTracerProvider(ctx context.Context, config OTelConfig, res *resource.Res
 
 	tracerProvider := trace.NewTracerProvider(
 		trace.WithResource(res),
-		trace.WithBatcher(exporter,
+		trace.WithBatcher(sanitizingExporter{SpanExporter: exporter},
 			trace.WithBatchTimeout(config.TraceBatchTimeout)),
 	)
 	return tracerProvider, nil
