@@ -173,6 +173,8 @@ type responseWriterWrapper struct {
 	size   int64
 }
 
+var _ http.Flusher = (*responseWriterWrapper)(nil)
+
 func (rw *responseWriterWrapper) WriteHeader(code int) {
 	rw.status = code
 	rw.ResponseWriter.WriteHeader(code)
@@ -182,6 +184,16 @@ func (rw *responseWriterWrapper) Write(b []byte) (int, error) {
 	n, err := rw.ResponseWriter.Write(b)
 	rw.size += int64(n)
 	return n, err
+}
+
+// Flush implements http.Flusher so streaming handlers (e.g. MCP SSE) work
+// through this wrapper. mcp-go type-asserts w.(http.Flusher) directly; Unwrap
+// alone is not enough since mcp-go does not use http.ResponseController.
+// status is already initialized to http.StatusOK by LoggingMiddleware and,
+// like Write, a flush never changes it, so no extra bookkeeping is needed
+// here to match the implicit-200 semantics of a raw Flush before WriteHeader.
+func (rw *responseWriterWrapper) Flush() {
+	_ = http.NewResponseController(rw.ResponseWriter).Flush()
 }
 
 // Unwrap returns the underlying ResponseWriter for middleware that need it.

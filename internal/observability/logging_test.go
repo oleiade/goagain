@@ -106,3 +106,23 @@ func TestLoggingMiddleware_SanitizesPathAndQuery(t *testing.T) {
 		t.Errorf("log line should be exactly one line; got %d newlines in %q", strings.Count(out, "\n"), out)
 	}
 }
+
+// TestResponseWriterWrapper_Flush covers the mcp-go SSE regression: mcp-go
+// type-asserts w.(http.Flusher) directly, so responseWriterWrapper must
+// implement Flush and forward it to the underlying ResponseWriter. It also
+// checks that flushing before any WriteHeader call leaves status at its
+// implicit-200 default, matching what Write already does in that case.
+func TestResponseWriterWrapper_Flush(t *testing.T) {
+	rec := httptest.NewRecorder()
+	rw := &responseWriterWrapper{ResponseWriter: rec, status: http.StatusOK}
+
+	var _ http.Flusher = rw
+	rw.Flush()
+
+	if !rec.Flushed {
+		t.Error("Flush did not reach the underlying ResponseRecorder")
+	}
+	if rw.status != http.StatusOK {
+		t.Errorf("status = %d, want %d (implicit 200 before any WriteHeader)", rw.status, http.StatusOK)
+	}
+}

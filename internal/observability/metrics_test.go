@@ -1,6 +1,8 @@
 package observability
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"sync"
 	"testing"
 )
@@ -63,5 +65,25 @@ func TestMetrics_RaceFreeStats(t *testing.T) {
 	}
 	if snap := m.dataIndexEntries.Load(); snap == nil || (*snap)["cards_by_id"] != int64(iterations-1) {
 		t.Errorf("dataIndexEntries missing latest write, snap=%v", snap)
+	}
+}
+
+// TestMetricsResponseWriter_Flush covers the mcp-go SSE regression: mcp-go
+// type-asserts w.(http.Flusher) directly, so metricsResponseWriter must
+// implement Flush and forward it to the underlying ResponseWriter. It also
+// checks that flushing before any WriteHeader call leaves status at its
+// implicit-200 default, matching what Write already does in that case.
+func TestMetricsResponseWriter_Flush(t *testing.T) {
+	rec := httptest.NewRecorder()
+	rw := &metricsResponseWriter{ResponseWriter: rec, status: http.StatusOK}
+
+	var _ http.Flusher = rw
+	rw.Flush()
+
+	if !rec.Flushed {
+		t.Error("Flush did not reach the underlying ResponseRecorder")
+	}
+	if rw.status != http.StatusOK {
+		t.Errorf("status = %d, want %d (implicit 200 before any WriteHeader)", rw.status, http.StatusOK)
 	}
 }

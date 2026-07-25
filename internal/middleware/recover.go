@@ -46,6 +46,8 @@ type recoverResponseWriter struct {
 	wroteHeader bool
 }
 
+var _ http.Flusher = (*recoverResponseWriter)(nil)
+
 func (rw *recoverResponseWriter) WriteHeader(code int) {
 	rw.wroteHeader = true
 	rw.ResponseWriter.WriteHeader(code)
@@ -54,6 +56,18 @@ func (rw *recoverResponseWriter) WriteHeader(code int) {
 func (rw *recoverResponseWriter) Write(b []byte) (int, error) {
 	rw.wroteHeader = true
 	return rw.ResponseWriter.Write(b)
+}
+
+// Flush implements http.Flusher so streaming handlers work through this
+// wrapper. mcp-go type-asserts w.(http.Flusher) directly and refuses SSE
+// ("Streaming unsupported") when the assertion fails; Unwrap alone is not
+// enough because mcp-go does not use http.ResponseController. A flush
+// commits an implicit 200 just like Write does, so mark wroteHeader the same
+// way Write does, without calling the underlying WriteHeader ourselves (the
+// underlying Flush issues its own implicit 200).
+func (rw *recoverResponseWriter) Flush() {
+	rw.wroteHeader = true
+	_ = http.NewResponseController(rw.ResponseWriter).Flush()
 }
 
 func (rw *recoverResponseWriter) Unwrap() http.ResponseWriter {
