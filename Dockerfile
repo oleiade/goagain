@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X github.com/oleiade/goag
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X github.com/oleiade/goagain/internal/observability.Version=${VERSION}" -o /goagain-mcp ./cmd/mcp
 
 # Runtime stage for API
-FROM alpine:3.19 AS api
+FROM alpine:3.24 AS api
 
 LABEL org.opencontainers.image.title="goagain-api" \
       org.opencontainers.image.description="REST API for Flesh and Blood card data" \
@@ -55,7 +55,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 ENTRYPOINT ["/app/goagain-api"]
 
 # Runtime stage for MCP
-FROM alpine:3.19 AS mcp
+FROM alpine:3.24 AS mcp
 
 LABEL org.opencontainers.image.title="goagain-mcp" \
       org.opencontainers.image.description="MCP server for Flesh and Blood card data" \

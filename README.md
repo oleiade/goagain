@@ -303,7 +303,7 @@ export OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4318
 
 ### Prerequisites
 
-- Go 1.25+
+- Go 1.26+
 - [golangci-lint](https://golangci-lint.run/) (for linting)
 - [k6](https://k6.io/) (for load testing, optional)
 
