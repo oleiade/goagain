@@ -226,7 +226,7 @@ func sanitizeLogField(s string, max int) string {
 		}
 	}
 	if clean {
-		return s
+		return toValidUTF8(s)
 	}
 	b := make([]byte, 0, len(s))
 	for i := 0; i < len(s); i++ {
@@ -236,7 +236,11 @@ func sanitizeLogField(s string, max int) string {
 		}
 		b = append(b, c)
 	}
-	return string(b)
+	// The control-byte filter above only covers bytes below 0x20, so raw
+	// invalid UTF-8 (0xff, 0xfe, ...) survives it, and the length cap can split
+	// a multi-byte rune and manufacture invalid UTF-8 from valid input. Either
+	// one poisons the OTLP log batch it lands in, so validate last.
+	return toValidUTF8(string(b))
 }
 
 // defaultGetClientIP extracts client IP from the request.

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 )
 
 // failingHandler always reports Enabled and returns sentinel from Handle.
@@ -124,5 +125,32 @@ func TestResponseWriterWrapper_Flush(t *testing.T) {
 	}
 	if rw.status != http.StatusOK {
 		t.Errorf("status = %d, want %d (implicit 200 before any WriteHeader)", rw.status, http.StatusOK)
+	}
+}
+
+// Log fields are request-derived and feed the OTLP log batch, where a single
+// invalid byte fails the whole batch. Two ways bad UTF-8 gets in: raw hostile
+// bytes (which sit above the control-byte filter's range), and the length cap
+// splitting a multi-byte rune in otherwise valid input.
+func TestSanitizeLogField_AlwaysValidUTF8(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		max  int
+	}{
+		{"hostile raw bytes", "/v1/cards/\xff\xfe", 256},
+		{"hostile bytes with control chars", "/a\x00\xff/b", 256},
+		{"truncation splits a rune", strings.Repeat("日", 10), 4},
+		{"truncation splits an emoji", "aa🎴🎴", 3},
+		{"clean ascii untouched", "/v1/cards", 256},
+		{"clean unicode untouched", "/cards/日本", 256},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sanitizeLogField(tt.in, tt.max)
+			if !utf8.ValidString(got) {
+				t.Errorf("sanitizeLogField(%q, %d) = %q, which is not valid UTF-8", tt.in, tt.max, got)
+			}
+		})
 	}
 }
