@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"time"
+	"unicode/utf8"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -281,6 +282,13 @@ func (m *Metrics) MetricsMiddleware(pathNormalizer func(string) string) func(htt
 			if pathNormalizer != nil {
 				path = pathNormalizer(path)
 			}
+			// Defense in depth: even if a normalizer regresses to a pass-through,
+			// invalid UTF-8 must never reach the exporter. A single poisoned label
+			// value fails every subsequent OTLP export forever, since counters are
+			// cumulative (this is exactly how the 9-day API metrics outage happened).
+			if !utf8.ValidString(path) {
+				path = "/invalid"
+			}
 
 			attrs := []attribute.KeyValue{
 				attribute.String("http.request.method", r.Method),
@@ -374,8 +382,32 @@ func (m *Metrics) RecordSessionEnd() {
 	m.mcpSessionsActive.Add(context.Background(), -1)
 }
 
+// staticRoutes is the allowlist of exact, non-parameterized paths registered in
+// internal/api/router.go. Anything not matched by a regex pattern below and not
+// in this set collapses to "/other", so neither invalid-UTF-8 bytes nor scanner
+// noise (/wp-admin, /.env, ...) can become an unbounded-cardinality metric label.
+var staticRoutes = map[string]bool{
+	"/":                                    true,
+	"/robots.txt":                          true,
+	"/sitemap.xml":                         true,
+	"/.well-known/api-catalog":             true,
+	"/.well-known/mcp/server-card.json":    true,
+	"/.well-known/agent-skills/index.json": true,
+	"/health":                              true,
+	"/openapi.yaml":                        true,
+	"/openapi":                             true,
+	"/docs":                                true,
+	"/static/tailwind.min.css":             true,
+	"/v1/cards":                            true,
+	"/v1/sets":                             true,
+	"/v1/keywords":                         true,
+	"/v1/abilities":                        true,
+}
+
 // PathNormalizer returns a function that normalizes URL paths for metrics labels.
-// This prevents high-cardinality labels from dynamic path segments.
+// This prevents high-cardinality labels from dynamic path segments and, since it
+// is an allowlist, bounds every unmatched path (malformed, scanned, or carrying
+// invalid UTF-8) to a single "/other" value instead of passing it through.
 func PathNormalizer() func(string) string {
 	// Patterns to normalize
 	patterns := []struct {
@@ -405,6 +437,10 @@ func PathNormalizer() func(string) string {
 			}
 		}
 
-		return path
+		if staticRoutes[path] {
+			return path
+		}
+
+		return "/other"
 	}
 }

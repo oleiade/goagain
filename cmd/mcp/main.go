@@ -177,13 +177,22 @@ func loadRateLimitRPS() int {
 	return 100
 }
 
+// mcpRoutes is the allowlist of paths actually registered on the mux in
+// runHTTP above: GET /health and the streamable-http MCP endpoint mounted at
+// "/", which mcp-go serves under the conventional path /mcp regardless of the
+// URL requested (it does not check r.URL.Path against its endpointPath when
+// used as a plain http.Handler). Anything else collapses to "/other".
+var mcpRoutes = map[string]bool{
+	"/mcp":    true,
+	"/health": true,
+}
+
 // mcpPathNormalizer returns a path normalizer for MCP HTTP endpoints.
 func mcpPathNormalizer() func(string) string {
 	return func(path string) string {
-		// Normalize MCP paths - they typically use /mcp for SSE and POST
-		if path == "/mcp" || path == "/mcp/message" {
+		if mcpRoutes[path] {
 			return path
 		}
-		return path
+		return "/other"
 	}
 }
