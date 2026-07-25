@@ -262,5 +262,29 @@
     "date_announced": "2026-01-20T00:00:00.000Z",
     "date_in_effect": "2026-01-23T00:00:00.000Z",
     "legality_article": "https://fabtcg.com/articles/living-legend-florian-rotwood-harbinger/"
+  },
+  {
+    "unique_id": "gq9fTL6Qhf8zQcWFTpHMb",
+    "card_unique_id": "jrQcdHwPDPTt8PWTdNLqk",
+    "status_active": true,
+    "date_announced": "2026-06-30T00:00:00.000Z",
+    "date_in_effect": "2026-07-03T00:00:00.000Z",
+    "legality_article": "https://fabtcg.com/articles/living-legend-prism-awakener-of-sol/"
+  },
+  {
+    "unique_id": "7mmcGDJtkNbLWfFq6cDrk",
+    "card_unique_id": "zcHmW9zd8TRqMMGc8PHmh",
+    "status_active": true,
+    "date_announced": "2026-06-30T00:00:00.000Z",
+    "date_in_effect": "2026-07-03T00:00:00.000Z",
+    "legality_article": "https://fabtcg.com/articles/living-legend-prism-awakener-of-sol/"
+  },
+  {
+    "unique_id": "7cCRJDQDPjpHttzHFJhmh",
+    "card_unique_id": "z8GG8N7Lkg6BQR7FnWcwp",
+    "status_active": true,
+    "date_announced": "2026-06-30T00:00:00.000Z",
+    "date_in_effect": "2026-07-03T00:00:00.000Z",
+    "legality_article": "https://fabtcg.com/articles/living-legend-prism-awakener-of-sol/"
   }
 ]
