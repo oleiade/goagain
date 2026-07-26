@@ -36,10 +36,24 @@ func NewServer(store *data.Store, logger *slog.Logger, metrics *observability.Me
 		metrics: metrics,
 	}
 
+	opts := []server.ServerOption{
+		server.WithToolCapabilities(true),
+	}
+	if metrics != nil {
+		hooks := &server.Hooks{}
+		hooks.AddOnRegisterSession(func(_ context.Context, _ server.ClientSession) {
+			metrics.RecordSessionStart()
+		})
+		hooks.AddOnUnregisterSession(func(_ context.Context, _ server.ClientSession) {
+			metrics.RecordSessionEnd()
+		})
+		opts = append(opts, server.WithHooks(hooks))
+	}
+
 	mcpServer := server.NewMCPServer(
 		"fab-cards",
 		"1.0.0",
-		server.WithToolCapabilities(true),
+		opts...,
 	)
 
 	// Register tools

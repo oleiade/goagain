@@ -9,8 +9,13 @@ import (
 	"testing"
 
 	mcpgo "github.com/mark3labs/mcp-go/mcp"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 	"github.com/oleiade/goagain/internal/data"
 	"github.com/oleiade/goagain/internal/domain"
+	"github.com/oleiade/goagain/internal/observability"
+	"go.opentelemetry.io/otel"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
 )
 
 // --- Helper-function tests ---
@@ -262,3 +267,117 @@ func TestInstrumentTool_RecordsZeroOnError(t *testing.T) {
 		t.Errorf("expected error log with result_count=0; saw %d records", len(cap.records))
 	}
 }
+
+// --- Session lifecycle metrics ---
+
+// fakeSession is a minimal mcpserver.ClientSession implementation, just
+// enough to drive RegisterSession/UnregisterSession in a test without
+// standing up a real stdio or HTTP transport.
+type fakeSession struct {
+	id string
+}
+
+func (f *fakeSession) SessionID() string { return f.id }
+func (f *fakeSession) NotificationChannel() chan<- mcpgo.JSONRPCNotification {
+	return make(chan mcpgo.JSONRPCNotification, 1)
+}
+func (f *fakeSession) Initialize()       {}
+func (f *fakeSession) Initialized() bool { return true }
+
+// sumMetric returns the summed int64 data-point values for the named Sum
+// metric across a collected snapshot, or 0 if the metric wasn't recorded.
+func sumMetric(rm metricdata.ResourceMetrics, name string) int64 {
+	var total int64
+	for _, sm := range rm.ScopeMetrics {
+		for _, met := range sm.Metrics {
+			if met.Name != name {
+				continue
+			}
+			sum, ok := met.Data.(metricdata.Sum[int64])
+			if !ok {
+				continue
+			}
+			for _, dp := range sum.DataPoints {
+				total += dp.Value
+			}
+		}
+	}
+	return total
+}
+
+// TestNewServer_RecordsSessionLifecycle verifies the mcp-go OnRegisterSession
+// / OnUnregisterSession hooks wired in NewServer actually drive
+// mcp.sessions.total and mcp.sessions.active, so those instruments stop
+// being permanently empty in Prometheus.
+func TestNewServer_RecordsSessionLifecycle(t *testing.T) {
+	reader := sdkmetric.NewManualReader()
+	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader))
+
+	prev := otel.GetMeterProvider()
+	otel.SetMeterProvider(provider)
+	defer otel.SetMeterProvider(prev)
+
+	metrics := observability.NewMetrics("test-mcp-sessions")
+
+	store, err := data.NewStore(nil)
+	if err != nil {
+		t.Fatalf("data.NewStore: %v", err)
+	}
+	cap := &capturingHandler{}
+	s := NewServer(store, slog.New(cap), metrics)
+
+	session := &fakeSession{id: "sess-1"}
+	ctx := context.Background()
+
+	if err := s.MCPServer().RegisterSession(ctx, session); err != nil {
+		t.Fatalf("RegisterSession: %v", err)
+	}
+
+	var rm metricdata.ResourceMetrics
+	if err := reader.Collect(ctx, &rm); err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	if got := sumMetric(rm, "mcp.sessions.total"); got != 1 {
+		t.Errorf("mcp.sessions.total after register = %d, want 1", got)
+	}
+	if got := sumMetric(rm, "mcp.sessions.active"); got != 1 {
+		t.Errorf("mcp.sessions.active after register = %d, want 1", got)
+	}
+
+	s.MCPServer().UnregisterSession(ctx, session.SessionID())
+
+	rm = metricdata.ResourceMetrics{}
+	if err := reader.Collect(ctx, &rm); err != nil {
+		t.Fatalf("Collect: %v", err)
+	}
+	if got := sumMetric(rm, "mcp.sessions.total"); got != 1 {
+		t.Errorf("mcp.sessions.total after unregister = %d, want 1 (unchanged)", got)
+	}
+	if got := sumMetric(rm, "mcp.sessions.active"); got != 0 {
+		t.Errorf("mcp.sessions.active after unregister = %d, want 0", got)
+	}
+}
+
+// TestNewServer_NilMetricsSkipsHooks verifies NewServer doesn't panic or
+// register hooks when metrics is nil (the stdio-mode / metrics-disabled
+// path), mirroring the nil-metrics guard used everywhere else in this
+// package.
+func TestNewServer_NilMetricsSkipsHooks(t *testing.T) {
+	store, err := data.NewStore(nil)
+	if err != nil {
+		t.Fatalf("data.NewStore: %v", err)
+	}
+	cap := &capturingHandler{}
+	s := NewServer(store, slog.New(cap), nil)
+
+	session := &fakeSession{id: "sess-nil"}
+	ctx := context.Background()
+
+	if err := s.MCPServer().RegisterSession(ctx, session); err != nil {
+		t.Fatalf("RegisterSession: %v", err)
+	}
+	s.MCPServer().UnregisterSession(ctx, session.SessionID())
+	// No metrics wired: nothing to assert beyond "did not panic".
+}
+
+var _ mcpserver.ClientSession = (*fakeSession)(nil)
