@@ -7,16 +7,16 @@
       "grafana.app/folder": "fdvgy3wngzbb4a",
       "grafana.app/saved-from-ui": "Grafana Cloud (steady)",
       "grafana.app/updatedBy": "user:u000000004",
-      "grafana.app/updatedTimestamp": "2026-07-26T12:40:49Z"
+      "grafana.app/updatedTimestamp": "2026-07-26T13:07:01Z"
     },
     "creationTimestamp": "2026-01-26T11:45:29Z",
-    "generation": 18,
+    "generation": 19,
     "labels": {
       "grafana.app/deprecatedInternalID": "2643921542242304"
     },
     "name": "th2qhfr",
     "namespace": "stacks-311705",
-    "resourceVersion": "2081359082575536128",
+    "resourceVersion": "2081365675555856384",
     "uid": "c2613b4c-d7e7-4f5b-99d7-ed55c712245d"
   },
   "spec": {
@@ -28,7 +28,7 @@
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations \u0026 Alerts",
+          "name": "Annotations & Alerts",
           "query": {
             "datasource": {
               "name": "-- Grafana --"
@@ -590,6 +590,98 @@
                     ]
                   },
                   "unit": "none"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.0-25668120414"
+          }
+        }
+      },
+      "panel-a7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "avg(avg_over_time(probe_success{job=\"goagain MCP\", instance=\"https://mcp.goagain.dev/health\"}[$__range])) * 100",
+                        "instant": true,
+                        "queryType": "instant",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Was the MCP endpoint reachable from outside? 3-region synthetic probe, 5 min interval.",
+          "id": 21,
+          "links": [],
+          "title": "Uptime (external)",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "max": 100,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "red",
+                        "value": 0
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 99
+                      },
+                      {
+                        "color": "green",
+                        "value": 99.9
+                      }
+                    ]
+                  },
+                  "unit": "percent"
                 },
                 "overrides": []
               },
@@ -1734,6 +1826,254 @@
           }
         }
       },
+      "panel-c5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "min by(probe) (probe_success{job=\"goagain MCP\", instance=\"https://mcp.goagain.dev/health\"})",
+                        "instant": false,
+                        "legendFormat": "{{probe}}",
+                        "queryType": "range",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Did the synthetic probe succeed from each region?",
+          "id": 22,
+          "links": [],
+          "title": "External probe success by region",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "short"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.1.0-25668120414"
+          }
+        }
+      },
+      "panel-c6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by(probe) (rate(probe_all_duration_seconds_sum{job=\"goagain MCP\"}[$__rate_interval])) / sum by(probe) (rate(probe_all_duration_seconds_count{job=\"goagain MCP\"}[$__rate_interval]))",
+                        "instant": false,
+                        "legendFormat": "{{probe}}",
+                        "queryType": "range",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "How long did the synthetic probe take to complete from each region?",
+          "id": 23,
+          "links": [],
+          "title": "External probe latency by region",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "auto",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "red",
+                        "value": 80
+                      }
+                    ]
+                  },
+                  "unit": "s"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.1.0-25668120414"
+          }
+        }
+      },
       "panel-d1": {
         "kind": "Panel",
         "spec": {
@@ -2225,8 +2565,8 @@
                 "name": "panel-a1"
               },
               "height": 5,
-              "width": 4,
-              "x": 0,
+              "width": 3,
+              "x": 3,
               "y": 0
             }
           },
@@ -2239,7 +2579,7 @@
               },
               "height": 5,
               "width": 4,
-              "x": 4,
+              "x": 6,
               "y": 0
             }
           },
@@ -2252,7 +2592,7 @@
               },
               "height": 5,
               "width": 4,
-              "x": 8,
+              "x": 10,
               "y": 0
             }
           },
@@ -2264,8 +2604,8 @@
                 "name": "panel-a4"
               },
               "height": 5,
-              "width": 4,
-              "x": 12,
+              "width": 3,
+              "x": 14,
               "y": 0
             }
           },
@@ -2278,7 +2618,7 @@
               },
               "height": 5,
               "width": 4,
-              "x": 16,
+              "x": 17,
               "y": 0
             }
           },
@@ -2290,8 +2630,8 @@
                 "name": "panel-a6"
               },
               "height": 5,
-              "width": 4,
-              "x": 20,
+              "width": 3,
+              "x": 21,
               "y": 0
             }
           },
@@ -2409,7 +2749,7 @@
               "height": 4,
               "width": 5,
               "x": 0,
-              "y": 35
+              "y": 43
             }
           },
           {
@@ -2422,7 +2762,7 @@
               "height": 4,
               "width": 5,
               "x": 5,
-              "y": 35
+              "y": 43
             }
           },
           {
@@ -2435,7 +2775,7 @@
               "height": 4,
               "width": 5,
               "x": 10,
-              "y": 35
+              "y": 43
             }
           },
           {
@@ -2448,7 +2788,7 @@
               "height": 4,
               "width": 5,
               "x": 15,
-              "y": 35
+              "y": 43
             }
           },
           {
@@ -2461,7 +2801,7 @@
               "height": 4,
               "width": 4,
               "x": 20,
-              "y": 35
+              "y": 43
             }
           },
           {
@@ -2474,7 +2814,46 @@
               "height": 10,
               "width": 24,
               "x": 0,
-              "y": 39
+              "y": 47
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-a7"
+              },
+              "height": 5,
+              "width": 3,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-c5"
+              },
+              "height": 8,
+              "width": 12,
+              "x": 0,
+              "y": 35
+            }
+          },
+          {
+            "kind": "GridLayoutItem",
+            "spec": {
+              "element": {
+                "kind": "ElementReference",
+                "name": "panel-c6"
+              },
+              "height": 8,
+              "width": 12,
+              "x": 12,
+              "y": 35
             }
           }
         ]
