@@ -1,0 +1,84 @@
+{
+  "annotations": {
+    "description": "More than 2% of real requests returned 5xx over 15m for {{ $labels.job }}.",
+    "summary": "More than 2% of real requests returned 5xx over 15m for {{ $labels.job }}."
+  },
+  "condition": "C",
+  "data": [
+    {
+      "datasourceUid": "grafanacloud-prom",
+      "model": {
+        "editorMode": "code",
+        "expr": "(\n  sum by(job) (increase(http_server_request_total{job=~\"goagain-api|goagain-mcp\", http_response_status_code=~\"5..\", http_route!=\"/health\"}[15m]))\n  /\n  sum by(job) (increase(http_server_request_total{job=~\"goagain-api|goagain-mcp\", http_route!=\"/health\"}[15m]))\n)",
+        "instant": true,
+        "intervalMs": 60000,
+        "legendFormat": "{{job}}",
+        "maxDataPoints": 43200,
+        "range": false,
+        "refId": "A"
+      },
+      "queryType": "",
+      "refId": "A",
+      "relativeTimeRange": {
+        "from": 900,
+        "to": 0
+      }
+    },
+    {
+      "datasourceUid": "__expr__",
+      "model": {
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0.02
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "expression": "A",
+        "intervalMs": 60000,
+        "maxDataPoints": 43200,
+        "refId": "C",
+        "type": "threshold"
+      },
+      "queryType": "",
+      "refId": "C",
+      "relativeTimeRange": {
+        "from": 900,
+        "to": 0
+      }
+    }
+  ],
+  "execErrState": "Alerting",
+  "folderUID": "fdvgy3wngzbb4a",
+  "for": "15m",
+  "id": 9,
+  "isPaused": false,
+  "keep_firing_for": "0s",
+  "labels": {
+    "service": "goagain"
+  },
+  "noDataState": "OK",
+  "notification_settings": null,
+  "orgID": 1,
+  "record": null,
+  "ruleGroup": "goagain-slis",
+  "title": "goagain 5xx ratio high",
+  "uid": "aft9xgzyval1ce",
+  "updated": "2026-07-26T12:54:53Z"
+}

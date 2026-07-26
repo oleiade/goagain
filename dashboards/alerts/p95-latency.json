@@ -1,0 +1,84 @@
+{
+  "annotations": {
+    "description": "p95 latency above 500ms over 15m for {{ $labels.job }}.",
+    "summary": "p95 latency above 500ms over 15m for {{ $labels.job }}."
+  },
+  "condition": "C",
+  "data": [
+    {
+      "datasourceUid": "grafanacloud-prom",
+      "model": {
+        "editorMode": "code",
+        "expr": "histogram_quantile(0.95, sum by(job, le) (rate(http_server_request_duration_seconds_bucket{job=~\"goagain-api|goagain-mcp\", http_route!=\"/health\"}[15m])))",
+        "instant": true,
+        "intervalMs": 60000,
+        "legendFormat": "{{job}}",
+        "maxDataPoints": 43200,
+        "range": false,
+        "refId": "A"
+      },
+      "queryType": "",
+      "refId": "A",
+      "relativeTimeRange": {
+        "from": 900,
+        "to": 0
+      }
+    },
+    {
+      "datasourceUid": "__expr__",
+      "model": {
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                0.5
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "expression": "A",
+        "intervalMs": 60000,
+        "maxDataPoints": 43200,
+        "refId": "C",
+        "type": "threshold"
+      },
+      "queryType": "",
+      "refId": "C",
+      "relativeTimeRange": {
+        "from": 900,
+        "to": 0
+      }
+    }
+  ],
+  "execErrState": "Alerting",
+  "folderUID": "fdvgy3wngzbb4a",
+  "for": "15m",
+  "id": 10,
+  "isPaused": false,
+  "keep_firing_for": "0s",
+  "labels": {
+    "service": "goagain"
+  },
+  "noDataState": "OK",
+  "notification_settings": null,
+  "orgID": 1,
+  "record": null,
+  "ruleGroup": "goagain-slis",
+  "title": "goagain p95 latency high",
+  "uid": "cft9xhcnd8jy8b",
+  "updated": "2026-07-26T12:54:59Z"
+}
