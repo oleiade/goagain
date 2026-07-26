@@ -6,6 +6,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -78,6 +79,7 @@ func run() (err error) {
 
 	handler := otelhttp.NewHandler(router, "goagain-api",
 		otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
+		otelhttp.WithFilter(func(r *http.Request) bool { return r.URL.Path != "/health" }),
 	)
 
 	srv := server.New("api", *port, logger, handler)

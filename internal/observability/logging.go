@@ -161,6 +161,13 @@ func LoggingMiddleware(logger *slog.Logger, getClientIP func(*http.Request) stri
 				level = slog.LevelWarn
 			}
 
+			// /health is polled constantly and a successful check carries no
+			// information; skip the log line for it. A failing health check
+			// (status >= 400) is information and still gets logged.
+			if r.URL.Path == "/health" && wrapped.status < 400 {
+				return
+			}
+
 			logger.LogAttrs(r.Context(), level, msg, attrs...)
 		})
 	}

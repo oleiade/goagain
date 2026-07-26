@@ -108,6 +108,46 @@ func TestLoggingMiddleware_SanitizesPathAndQuery(t *testing.T) {
 	}
 }
 
+// TestLoggingMiddleware_SkipsHealthyHealthCheck covers Phase 3.3 of the
+// dashboard overhaul: HEAD/GET /health is polled constantly and a successful
+// check carries no information, so it must not produce a log line.
+func TestLoggingMiddleware_SkipsHealthyHealthCheck(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+
+	r := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rr := httptest.NewRecorder()
+	LoggingMiddleware(logger, func(*http.Request) string { return "127.0.0.1" })(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})).ServeHTTP(rr, r)
+
+	if buf.Len() != 0 {
+		t.Errorf("expected no log line for a 200 /health request, got %q", buf.String())
+	}
+}
+
+// TestLoggingMiddleware_LogsFailingHealthCheck ensures the skip above does not
+// swallow a failing health check: status >= 400 is information and must still
+// be logged.
+func TestLoggingMiddleware_LogsFailingHealthCheck(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+
+	r := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rr := httptest.NewRecorder()
+	LoggingMiddleware(logger, func(*http.Request) string { return "127.0.0.1" })(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	})).ServeHTTP(rr, r)
+
+	out := buf.String()
+	if strings.Count(out, "\n") != 1 {
+		t.Errorf("expected exactly one log line for a 500 /health request; got %d newlines in %q", strings.Count(out, "\n"), out)
+	}
+	if !strings.Contains(out, "/health") {
+		t.Errorf("log line should reference /health; got %q", out)
+	}
+}
+
 // TestResponseWriterWrapper_Flush covers the mcp-go SSE regression: mcp-go
 // type-asserts w.(http.Flusher) directly, so responseWriterWrapper must
 // implement Flush and forward it to the underlying ResponseWriter. It also

@@ -134,6 +134,7 @@ func runHTTP(ctx context.Context, mcpServer *fabmcp.Server, port int, logger *sl
 	handler = middleware.Recover(logger)(handler)
 	handler = otelhttp.NewHandler(handler, "goagain-mcp",
 		otelhttp.WithMessageEvents(otelhttp.ReadEvents, otelhttp.WriteEvents),
+		otelhttp.WithFilter(func(r *http.Request) bool { return r.URL.Path != "/health" }),
 	)
 
 	srv := server.New("mcp-http", port, logger, handler)
