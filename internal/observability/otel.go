@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
@@ -134,6 +135,12 @@ func SetupOTelSDK(ctx context.Context, config OTelConfig) (func(context.Context)
 	}
 	shutdownFuncs = append(shutdownFuncs, meterProvider.Shutdown)
 	otel.SetMeterProvider(meterProvider)
+
+	// Start Go runtime metrics instrumentation (goroutines, memory, GC).
+	if err = runtime.Start(runtime.WithMinimumReadMemStatsInterval(15 * time.Second)); err != nil {
+		handleErr(err)
+		return shutdown, err
+	}
 
 	// Set up logger provider.
 	loggerProvider, err := newLoggerProvider(ctx, config, res)
