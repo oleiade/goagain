@@ -1,0 +1,42 @@
+{
+  "alertSensitivity": "none",
+  "basicMetricsOnly": true,
+  "channels": {
+    "k6": null
+  },
+  "created": 1785070955.897241,
+  "description": "",
+  "enabled": true,
+  "folderUid": "",
+  "frequency": 300000,
+  "id": 56669,
+  "job": "goagain MCP",
+  "labels": [],
+  "modified": 1785070955.897241,
+  "offset": 0,
+  "probes": [
+    12,
+    18,
+    901
+  ],
+  "settings": {
+    "http": {
+      "failIfNotSSL": true,
+      "failIfSSL": false,
+      "ipVersion": "V4",
+      "method": "GET",
+      "noFollowRedirects": false,
+      "validHTTPVersions": [
+        "HTTP/2.0",
+        "HTTP/1.1",
+        "HTTP/1.0"
+      ],
+      "validStatusCodes": [
+        200
+      ]
+    }
+  },
+  "target": "https://mcp.goagain.dev/health",
+  "tenantId": 4852,
+  "timeout": 3000
+}
