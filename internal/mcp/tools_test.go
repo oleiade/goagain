@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"sync"
 	"testing"
@@ -265,6 +266,96 @@ func TestInstrumentTool_RecordsZeroOnError(t *testing.T) {
 	}
 	if !found {
 		t.Errorf("expected error log with result_count=0; saw %d records", len(cap.records))
+	}
+}
+
+// --- search_cards tool tests ---
+
+func callSearchCards(t *testing.T, s *Server, args map[string]any) *mcpgo.CallToolResult {
+	t.Helper()
+	tool := s.MCPServer().GetTool("search_cards")
+	if tool == nil {
+		t.Fatalf("search_cards tool not registered")
+	}
+	req := mcpgo.CallToolRequest{}
+	req.Params.Arguments = args
+	result, err := tool.Handler(context.Background(), req)
+	if err != nil {
+		t.Fatalf("handler returned error: %v", err)
+	}
+	return result
+}
+
+func TestSearchCards_LegalInFiltersToLegalCards(t *testing.T) {
+	store, err := data.NewStore(nil)
+	if err != nil {
+		t.Fatalf("data.NewStore: %v", err)
+	}
+	s := NewServer(store, slog.New(slog.NewTextHandler(io.Discard, nil)), nil)
+
+	result := callSearchCards(t, s, map[string]any{"legal_in": "cc", "limit": float64(50)})
+	if result.IsError {
+		t.Fatalf("unexpected error result: %v", result)
+	}
+
+	text := result.Content[0].(mcpgo.TextContent).Text
+	var payload struct {
+		Results []struct {
+			UniqueID string `json:"unique_id"`
+		} `json:"results"`
+	}
+	if err := json.Unmarshal([]byte(text), &payload); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, text)
+	}
+	if len(payload.Results) == 0 {
+		t.Fatalf("expected at least one result for legal_in=cc")
+	}
+	for _, r := range payload.Results {
+		card := store.GetCardByID(r.UniqueID)
+		if card == nil {
+			t.Fatalf("returned card %s not found in store", r.UniqueID)
+		}
+		if !card.GetLegality(domain.FormatCC).Legal {
+			t.Errorf("card %s is not legal in cc but was returned", r.UniqueID)
+		}
+	}
+}
+
+func TestSearchCards_InvalidLegalInIsError(t *testing.T) {
+	store, err := data.NewStore(nil)
+	if err != nil {
+		t.Fatalf("data.NewStore: %v", err)
+	}
+	s := NewServer(store, slog.New(slog.NewTextHandler(io.Discard, nil)), nil)
+
+	result := callSearchCards(t, s, map[string]any{"legal_in": "modern"})
+	if !result.IsError {
+		t.Errorf("expected IsError for invalid legal_in, got success")
+	}
+}
+
+func TestSearchCards_ResponseIncludesTotal(t *testing.T) {
+	store, err := data.NewStore(nil)
+	if err != nil {
+		t.Fatalf("data.NewStore: %v", err)
+	}
+	s := NewServer(store, slog.New(slog.NewTextHandler(io.Discard, nil)), nil)
+
+	result := callSearchCards(t, s, map[string]any{"limit": float64(5)})
+	if result.IsError {
+		t.Fatalf("unexpected error result: %v", result)
+	}
+
+	text := result.Content[0].(mcpgo.TextContent).Text
+	var payload struct {
+		Count int `json:"count"`
+		Total int `json:"total"`
+	}
+	if err := json.Unmarshal([]byte(text), &payload); err != nil {
+		t.Fatalf("invalid JSON: %v\n%s", err, text)
+	}
+	if payload.Total < payload.Count {
+		t.Errorf("total (%d) is less than count (%d)", payload.Total, payload.Count)
 	}
 }
 

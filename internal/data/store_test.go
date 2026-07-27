@@ -130,6 +130,37 @@ func TestSearchCards(t *testing.T) {
 			},
 		},
 		{
+			name:   "filter by cost",
+			filter: CardFilter{Cost: "0", Limit: 10},
+			want: func(cards []*domain.Card, total int) bool {
+				for _, c := range cards {
+					if c.Cost != "0" {
+						return false
+					}
+				}
+				return len(cards) > 0 && total > 0
+			},
+		},
+		{
+			name:   "filter by rarity",
+			filter: CardFilter{Rarity: "M", Limit: 10},
+			want: func(cards []*domain.Card, total int) bool {
+				for _, c := range cards {
+					found := false
+					for _, printing := range c.Printings {
+						if strings.EqualFold(printing.Rarity, "M") {
+							found = true
+							break
+						}
+					}
+					if !found {
+						return false
+					}
+				}
+				return len(cards) > 0 && total > 0
+			},
+		},
+		{
 			name:   "filter by text",
 			filter: CardFilter{TextQuery: "go again", Limit: 10},
 			want: func(cards []*domain.Card, total int) bool {
@@ -262,6 +293,33 @@ func TestSearchCards_KeywordUnion(t *testing.T) {
 	_, total2 := store.SearchCards(filter)
 	if total != total2 {
 		t.Errorf("non-deterministic totals across calls: %d then %d", total, total2)
+	}
+}
+
+func TestSearchCards_OffsetPagination(t *testing.T) {
+	store, err := NewStore(nil)
+	if err != nil {
+		t.Fatalf("NewStore() error = %v", err)
+	}
+
+	page1, total1 := store.SearchCards(CardFilter{Limit: 5, Offset: 0})
+	page2, total2 := store.SearchCards(CardFilter{Limit: 5, Offset: 5})
+
+	if total1 != total2 {
+		t.Fatalf("total mismatch across pages: %d then %d", total1, total2)
+	}
+	if len(page1) != 5 || len(page2) != 5 {
+		t.Fatalf("expected 5 cards per page, got %d and %d", len(page1), len(page2))
+	}
+
+	seen := make(map[string]struct{}, len(page1))
+	for _, c := range page1 {
+		seen[c.UniqueID] = struct{}{}
+	}
+	for _, c := range page2 {
+		if _, dup := seen[c.UniqueID]; dup {
+			t.Errorf("card %s (%s) appears in both offset 0 and offset 5 pages", c.UniqueID, c.Name)
+		}
 	}
 }
 

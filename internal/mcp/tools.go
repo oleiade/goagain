@@ -167,12 +167,23 @@ func (s *Server) registerSearchCards(mcpServer *server.MCPServer) {
 		mcp.WithString("class", mcp.Description("Filter by class (e.g., 'Warrior', 'Ninja', 'Wizard')")),
 		mcp.WithString("set", mcp.Description("Filter by set code (e.g., 'WTR', 'ARC', 'MON')")),
 		mcp.WithString("pitch", mcp.Description("Filter by pitch value ('1', '2', or '3')")),
+		mcp.WithString("cost", mcp.Description("Filter by exact cost value")),
+		mcp.WithString("power", mcp.Description("Filter by exact power value")),
+		mcp.WithString("defense", mcp.Description("Filter by exact defense value")),
+		mcp.WithString("rarity", mcp.Description("Filter by rarity code: C (Common), R (Rare), S (Super Rare), M (Majestic), L (Legendary), F (Fabled), T (Token), B (Basic), V (Marvel), P (Promo)")),
 		mcp.WithString("keyword", mcp.Description("Filter by keyword (e.g., 'Go again', 'Dominate')")),
+		mcp.WithString("legal_in", mcp.Description("Only return cards legal in this format (blitz, cc, commoner, ll, silver_age, upf)")),
 		mcp.WithNumber("limit", mcp.Description("Maximum number of results (default 20, max 50)")),
+		mcp.WithNumber("offset", mcp.Description("Number of results to skip, for pagination")),
 	)
 
 	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args := request.Params.Arguments
+
+		legalIn := strings.ToLower(getStringArg(args, "legal_in"))
+		if legalIn != "" && !domain.IsKnownFormat(domain.Format(legalIn)) {
+			return mcp.NewToolResultError(fmt.Sprintf("unknown format %q, must be one of: blitz, cc, commoner, ll, silver_age, upf", legalIn)), nil
+		}
 
 		filter := data.CardFilter{
 			Name:    getStringArg(args, "name"),
@@ -180,15 +191,21 @@ func (s *Server) registerSearchCards(mcpServer *server.MCPServer) {
 			Class:   getStringArg(args, "class"),
 			SetID:   getStringArg(args, "set"),
 			Pitch:   getStringArg(args, "pitch"),
+			Cost:    getStringArg(args, "cost"),
+			Power:   getStringArg(args, "power"),
+			Defense: getStringArg(args, "defense"),
+			Rarity:  getStringArg(args, "rarity"),
 			Keyword: getStringArg(args, "keyword"),
+			LegalIn: domain.Format(legalIn),
 			Limit:   getIntArg(args, "limit", 20),
+			Offset:  getIntArg(args, "offset", 0),
 		}
 
 		if filter.Limit > 50 {
 			filter.Limit = 50
 		}
 
-		cards, _ := s.store.SearchCards(filter)
+		cards, total := s.store.SearchCards(filter)
 
 		// Format results for display
 		var results []map[string]any
@@ -199,6 +216,8 @@ func (s *Server) registerSearchCards(mcpServer *server.MCPServer) {
 		recordResultCount(ctx, len(results))
 		return mcp.NewToolResultText(formatJSON(map[string]any{
 			"count":   len(results),
+			"total":   total,
+			"offset":  filter.Offset,
 			"results": results,
 		})), nil
 	}

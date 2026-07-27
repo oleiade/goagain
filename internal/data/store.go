@@ -228,6 +228,10 @@ type CardFilter struct {
 	Class     string
 	SetID     string
 	Pitch     string
+	Cost      string
+	Power     string
+	Defense   string
+	Rarity    string
 	Keyword   string
 	TextQuery string
 	LegalIn   domain.Format
@@ -343,6 +347,35 @@ func (s *Store) matchesFilter(card *domain.Card, filter CardFilter) bool {
 	// Pitch filter
 	if filter.Pitch != "" && card.Pitch != filter.Pitch {
 		return false
+	}
+
+	// Cost filter
+	if filter.Cost != "" && card.Cost != filter.Cost {
+		return false
+	}
+
+	// Power filter
+	if filter.Power != "" && card.Power != filter.Power {
+		return false
+	}
+
+	// Defense filter
+	if filter.Defense != "" && card.Defense != filter.Defense {
+		return false
+	}
+
+	// Rarity filter: matches if any printing has the rarity
+	if filter.Rarity != "" {
+		found := false
+		for _, printing := range card.Printings {
+			if strings.EqualFold(printing.Rarity, filter.Rarity) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
 	}
 
 	// Keyword filter (more thorough than the index check)

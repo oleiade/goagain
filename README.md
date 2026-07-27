@@ -105,7 +105,7 @@ The MCP server allows AI assistants to query Flesh and Blood card data. It suppo
 
 | Tool | Description |
 |------|-------------|
-| `search_cards` | Search cards by name, type, class, set, pitch, or keyword |
+| `search_cards` | Search cards by name, type, class, set, pitch, cost, power, defense, rarity, keyword, or format legality, with offset pagination |
 | `get_card` | Get full details of a card by ID or name |
 | `list_sets` | List all card sets |
 | `search_sets` | Search sets by name or code |

@@ -29,7 +29,7 @@ Free API for Flesh and Blood TCG card data. No API key required. REST endpoints 
 
 The MCP server exposes the following tools for AI assistants:
 
-- `search_cards` - Search cards by name, type, class, set, pitch, or keyword
+- `search_cards` - Search cards by name, type, class, set, pitch, cost, power, defense, rarity, keyword, or format legality, with offset pagination
 - `get_card` - Get full card details by unique_id or name
 - `list_sets` - List all card sets
 - `search_sets` - Search sets by name, id, or query
