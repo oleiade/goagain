@@ -36,6 +36,7 @@ The MCP server exposes the following tools for AI assistants:
 - `get_set` - Get set details with optional card list
 - `search_card_text` - Full-text search in card ability text
 - `get_format_legality` - Check card legality across all formats
+- `get_banned_list` - List cards banned, suspended, restricted, or Living Legend in a format
 - `list_keywords` - List all game keywords
 - `get_keyword` - Get keyword description by name
 

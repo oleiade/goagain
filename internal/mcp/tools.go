@@ -64,6 +64,7 @@ func NewServer(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	s.registerGetSet(mcpServer)
 	s.registerSearchCardText(mcpServer)
 	s.registerGetFormatLegality(mcpServer)
+	s.registerGetBannedList(mcpServer)
 	s.registerListKeywords(mcpServer)
 	s.registerGetKeyword(mcpServer)
 
