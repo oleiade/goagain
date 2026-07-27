@@ -116,6 +116,8 @@ The MCP server allows AI assistants to query Flesh and Blood card data. It suppo
 | `draw_probability` | Calculate exact hypergeometric odds of drawing specific cards |
 | `list_keywords` | List all game keywords |
 | `get_keyword` | Get keyword description |
+| `search_rules` | Search the official Comprehensive Rules by keyword |
+| `get_rule` | Get a specific rule by number, including its sub-rules |
 
 ### Claude Desktop Integration
 

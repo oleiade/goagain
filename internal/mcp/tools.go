@@ -68,6 +68,8 @@ func NewServer(store *data.Store, logger *slog.Logger, metrics *observability.Me
 	s.registerDrawProbability(mcpServer)
 	s.registerListKeywords(mcpServer)
 	s.registerGetKeyword(mcpServer)
+	s.registerSearchRules(mcpServer)
+	s.registerGetRule(mcpServer)
 
 	s.mcpServer = mcpServer
 	return s

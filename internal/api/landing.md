@@ -40,6 +40,8 @@ The MCP server exposes the following tools for AI assistants:
 - `draw_probability` - Calculate exact hypergeometric odds of drawing specific cards
 - `list_keywords` - List all game keywords
 - `get_keyword` - Get keyword description by name
+- `search_rules` - Search the official Comprehensive Rules by keyword
+- `get_rule` - Get a specific rule by number, including its sub-rules
 
 ## Quick Start
 

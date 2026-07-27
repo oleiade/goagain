@@ -28,6 +28,7 @@ type Store struct {
 	Keywords  []*domain.Keyword
 	Abilities []*domain.Ability
 	Types     []*domain.Type
+	Rules     []Rule
 
 	// Indexes
 	CardsByID      map[string]*domain.Card
@@ -36,6 +37,7 @@ type Store struct {
 	SetsByID       map[string]*domain.Set
 	KeywordsByName map[string]*domain.Keyword
 	TypesByName    map[string]*domain.Type
+	RulesByID      map[string]*Rule
 
 	// New indexes for filtering
 	CardsByClass   map[string][]*domain.Card
@@ -75,6 +77,10 @@ func NewStore(metrics *observability.Metrics) (*Store, error) {
 
 	if err := s.loadAbilities(); err != nil {
 		return nil, fmt.Errorf("loading abilities: %w", err)
+	}
+
+	if err := s.loadRules(); err != nil {
+		return nil, fmt.Errorf("loading rules: %w", err)
 	}
 
 	// After all data is loaded and indexed, set the metrics
@@ -481,6 +487,7 @@ func (s *Store) Stats() (map[string]int, map[string]int) {
 		"keywords":  len(s.Keywords),
 		"abilities": len(s.Abilities),
 		"types":     len(s.Types),
+		"rules":     len(s.Rules),
 	}
 
 	indexStats := map[string]int{
@@ -493,6 +500,7 @@ func (s *Store) Stats() (map[string]int, map[string]int) {
 		"cards_by_class":   len(s.CardsByClass),
 		"cards_by_type":    len(s.CardsByType),
 		"cards_by_keyword": len(s.CardsByKeyword),
+		"rules_by_id":      len(s.RulesByID),
 	}
 
 	return dataStats, indexStats
