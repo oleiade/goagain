@@ -36,6 +36,14 @@ govulncheck ./...
 # a set branch. Files are unioned by `unique_id` with set-branch-wins precedence,
 # then written to internal/data/english/. Requires jq.
 
+# 7. Sync the Comprehensive Rules
+
+./scripts/sync-rules.sh
+# Downloads the official LSS Comprehensive Rules text export to
+# internal/data/rules/comprehensive-rules.txt and prints the PDF cover page so the
+# version and date in internal/data/rules/README.md can be updated to match.
+# Requires curl and pdftotext (poppler). See the `sync-data` skill for the gotchas.
+
 
 # Architecture
 

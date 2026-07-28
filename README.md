@@ -335,6 +335,16 @@ Card data is sourced from an upstream submodule. To update:
 ./scripts/sync-data.sh
 ```
 
+### Updating the Comprehensive Rules
+
+The rules text backing `search_rules` and `get_rule` is published by Legend Story
+Studios. To update it, and to print the version and date to record in
+`internal/data/rules/README.md`:
+
+```bash
+./scripts/sync-rules.sh
+```
+
 ## Contributing
 
 Contributions are welcome! Please:
