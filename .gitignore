@@ -15,7 +15,13 @@ fab-mcp
 
 # Agents
 .mcp.json
-.claude/
+# Track this project's own skills; everything else under .claude/ is local,
+# including settings and skills installed from elsewhere.
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/release/
+!.claude/skills/sync-data/
 
 # IDE
 .idea/
