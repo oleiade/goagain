@@ -217,6 +217,27 @@ func (s *Store) GetCardsByName(name string) []*domain.Card {
 	return s.CardsByName[strings.ToLower(name)]
 }
 
+// ResolveCard returns the card denoted by idOrName, matching UniqueID first and
+// falling back to an exact (case-insensitive) name lookup.
+//
+// Any handler or tool taking a caller-supplied card reference should use this
+// instead of GetCardByID, so the same reference resolves identically everywhere.
+// GET /v1/cards/{id}/legality once accepted only unique IDs while GET
+// /v1/cards/{id} accepted both, so an agent that looked a card up by name got a
+// 404 asking for that same card's legality.
+//
+// Several cards can share a name (pitch-1/2/3 variants); the first match wins.
+// Callers wanting every variant should use GetCardsByName directly.
+func (s *Store) ResolveCard(idOrName string) *domain.Card {
+	if card := s.GetCardByID(idOrName); card != nil {
+		return card
+	}
+	if cards := s.GetCardsByName(idOrName); len(cards) > 0 {
+		return cards[0]
+	}
+	return nil
+}
+
 // GetSetByID returns a set by its ID code (e.g., "WTR", "ARC").
 func (s *Store) GetSetByID(id string) *domain.Set {
 	return s.SetsByID[strings.ToUpper(id)]

@@ -125,3 +125,49 @@ func TestAuthMd(t *testing.T) {
 		}
 	}
 }
+
+// TestCardLookupConsistency covers the split where /v1/cards/{id} accepted a card
+// name but /v1/cards/{id}/legality accepted only a unique_id, so an agent that
+// resolved a card by name got a 404 asking for that same card's legality.
+func TestCardLookupConsistency(t *testing.T) {
+	h := newTestHandler(t)
+
+	// Resolve a real card by name first, so the test does not hardcode an id.
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, "/v1/cards?limit=1", nil)
+	h.ListCards(w, r)
+	var list struct {
+		Data []struct {
+			UniqueID string `json:"unique_id"`
+			Name     string `json:"name"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &list); err != nil || len(list.Data) == 0 {
+		t.Fatalf("could not seed a card: %v (%s)", err, w.Body.String())
+	}
+	card := list.Data[0]
+
+	for _, ref := range []struct{ kind, value string }{
+		{"unique_id", card.UniqueID},
+		{"name", card.Name},
+	} {
+		t.Run(ref.kind, func(t *testing.T) {
+			for _, ep := range []struct {
+				name    string
+				path    string
+				handler func(http.ResponseWriter, *http.Request)
+			}{
+				{"card", "/v1/cards/{id}", h.GetCard},
+				{"legality", "/v1/cards/{id}/legality", h.GetCardLegality},
+			} {
+				w := httptest.NewRecorder()
+				r := httptest.NewRequest(http.MethodGet, "/", nil)
+				r.SetPathValue("id", ref.value)
+				ep.handler(w, r)
+				if w.Code != http.StatusOK {
+					t.Errorf("%s by %s: status = %d, want 200 (ref %q)", ep.name, ref.kind, w.Code, ref.value)
+				}
+			}
+		})
+	}
+}

@@ -239,15 +239,7 @@ func (s *Server) registerGetCard(mcpServer *server.MCPServer) {
 			return mcp.NewToolResultError("id is required"), nil
 		}
 
-		card := s.store.GetCardByID(id)
-		if card == nil {
-			// Try by name
-			cards := s.store.GetCardsByName(id)
-			if len(cards) > 0 {
-				card = cards[0]
-			}
-		}
-
+		card := s.store.ResolveCard(id)
 		if card == nil {
 			return mcp.NewToolResultError(fmt.Sprintf("card not found: %s", id)), nil
 		}
@@ -412,14 +404,7 @@ func (s *Server) registerGetFormatLegality(mcpServer *server.MCPServer) {
 			return mcp.NewToolResultError("id is required"), nil
 		}
 
-		card := s.store.GetCardByID(id)
-		if card == nil {
-			cards := s.store.GetCardsByName(id)
-			if len(cards) > 0 {
-				card = cards[0]
-			}
-		}
-
+		card := s.store.ResolveCard(id)
 		if card == nil {
 			return mcp.NewToolResultError(fmt.Sprintf("card not found: %s", id)), nil
 		}

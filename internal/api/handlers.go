@@ -194,11 +194,9 @@ func (h *Handler) ListCards(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// GetCard returns a single card by ID. The {id} path segment is matched against
-// UniqueID first; if no match is found it falls back to an exact (case-insensitive)
-// name lookup. Multiple cards can share a name (e.g. pitch-1/2/3 variants); when the
-// fallback finds more than one, the first map-iteration match is returned. Callers
-// that want all variants should use GET /v1/cards?name=...
+// GetCard returns a single card by unique ID or exact name. See
+// data.Store.ResolveCard for the resolution order and the multi-match caveat;
+// callers that want every variant should use GET /v1/cards?name=...
 func (h *Handler) GetCard(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if id == "" {
@@ -206,15 +204,10 @@ func (h *Handler) GetCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	card := h.store.GetCardByID(id)
+	card := h.store.ResolveCard(id)
 	if card == nil {
-		// Fall back to exact-name lookup. See doc comment above for the multi-match caveat.
-		cards := h.store.GetCardsByName(id)
-		if len(cards) == 0 {
-			writeError(w, http.StatusNotFound, "card not found")
-			return
-		}
-		card = cards[0]
+		writeError(w, http.StatusNotFound, "card not found")
+		return
 	}
 
 	writeJSON(w, http.StatusOK, card)
@@ -478,7 +471,7 @@ func (h *Handler) GetCardLegality(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	card := h.store.GetCardByID(id)
+	card := h.store.ResolveCard(id)
 	if card == nil {
 		writeError(w, http.StatusNotFound, "card not found")
 		return

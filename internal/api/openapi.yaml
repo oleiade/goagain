@@ -182,9 +182,10 @@ paths:
         - name: id
           in: path
           required: true
-          description: Card unique_id
+          description: Card unique_id or exact name
           schema:
             type: string
+          example: "QDrWjRHBmBWBnJHmmbzRM"
       responses:
         '200':
           description: Card legality across formats
