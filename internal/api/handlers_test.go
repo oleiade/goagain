@@ -171,3 +171,34 @@ func TestCardLookupConsistency(t *testing.T) {
 		})
 	}
 }
+
+// TestLandingPage_WebMCP guards the browser tool registration. Agents and the
+// readiness scanners only see tools registered during page load, so the script
+// has to be inline in the landing page rather than lazily attached.
+func TestLandingPage_WebMCP(t *testing.T) {
+	h := newTestHandler(t)
+
+	w := httptest.NewRecorder()
+	h.Index(w, httptest.NewRequest(http.MethodGet, "/", nil))
+	body := w.Body.String()
+
+	// Both surfaces: the W3C draft uses document.modelContext.registerTool, while
+	// Chrome's preview shipped navigator.modelContext.provideContext.
+	for _, want := range []string{
+		"document.modelContext",
+		"navigator.modelContext",
+		"registerTool",
+		"provideContext",
+		"search_cards",
+		"get_card",
+		"get_card_legality",
+		"get_keyword",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("landing page missing WebMCP token %q", want)
+		}
+	}
+	if strings.Contains(body, "https://api.goagain.dev") {
+		t.Error("tool fetches should target the configured base URL, not the hardcoded production host")
+	}
+}

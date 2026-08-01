@@ -1114,5 +1114,195 @@
                     });
             }
         </script>
+
+        <!-- WebMCP: expose the card API as browser tools so an agent driving a
+             page can query cards without an out-of-band integration.
+             https://webmachinelearning.github.io/webmcp/ -->
+        <script>
+            (function () {
+                const API = "https://api.goagain.dev";
+
+                async function call(path) {
+                    const res = await fetch(API + path, {
+                        headers: { Accept: "application/json" },
+                    });
+                    if (!res.ok) {
+                        throw new Error(
+                            "goagain API returned " + res.status + " for " + path,
+                        );
+                    }
+                    return res.json();
+                }
+
+                // MCP-shaped result. The draft types execute as Promise<any>, but
+                // a content array is what agent runtimes already know how to read.
+                function result(value) {
+                    return {
+                        content: [
+                            { type: "text", text: JSON.stringify(value, null, 2) },
+                        ],
+                    };
+                }
+
+                const FILTERS = [
+                    "q",
+                    "name",
+                    "class",
+                    "type",
+                    "set",
+                    "pitch",
+                    "keyword",
+                    "legal_in",
+                ];
+
+                const tools = [
+                    {
+                        name: "search_cards",
+                        title: "Search Flesh and Blood cards",
+                        description:
+                            "Search Flesh and Blood cards by free text, name, class, type, set, pitch value, keyword or format legality. Returns matching cards with their stats.",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                q: {
+                                    type: "string",
+                                    description:
+                                        "Free text matched against card name and rules text",
+                                },
+                                name: { type: "string" },
+                                class: {
+                                    type: "string",
+                                    description: "Hero class, e.g. Guardian, Ninja",
+                                },
+                                type: {
+                                    type: "string",
+                                    description: "Card type, e.g. Action, Equipment",
+                                },
+                                set: { type: "string", description: "Set identifier" },
+                                pitch: {
+                                    type: "string",
+                                    description: "Pitch value: 1, 2 or 3",
+                                },
+                                keyword: { type: "string" },
+                                legal_in: {
+                                    type: "string",
+                                    description:
+                                        "Restrict to cards legal in a format, e.g. blitz, cc",
+                                },
+                                limit: {
+                                    type: "integer",
+                                    description: "Max results, 1-50 (default 10)",
+                                },
+                            },
+                        },
+                        annotations: { readOnlyHint: true },
+                        execute: async (input) => {
+                            const args = input || {};
+                            const params = new URLSearchParams();
+                            for (const key of FILTERS) {
+                                const value = args[key];
+                                if (value !== undefined && value !== null && value !== "") {
+                                    params.set(key, String(value));
+                                }
+                            }
+                            const limit = Number(args.limit) || 10;
+                            params.set("limit", String(Math.min(Math.max(limit, 1), 50)));
+                            return result(await call("/v1/cards?" + params));
+                        },
+                    },
+                    {
+                        name: "get_card",
+                        title: "Get a card",
+                        description:
+                            "Get one Flesh and Blood card by its unique id or exact name.",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                id: {
+                                    type: "string",
+                                    description: "Card unique_id or exact card name",
+                                },
+                            },
+                            required: ["id"],
+                        },
+                        annotations: { readOnlyHint: true },
+                        execute: async (input) =>
+                            result(
+                                await call(
+                                    "/v1/cards/" + encodeURIComponent((input || {}).id),
+                                ),
+                            ),
+                    },
+                    {
+                        name: "get_card_legality",
+                        title: "Get card legality",
+                        description:
+                            "Get a card's legality across every Flesh and Blood format, including whether it is banned, suspended or living legend.",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                id: {
+                                    type: "string",
+                                    description: "Card unique_id or exact card name",
+                                },
+                            },
+                            required: ["id"],
+                        },
+                        annotations: { readOnlyHint: true },
+                        execute: async (input) =>
+                            result(
+                                await call(
+                                    "/v1/cards/" +
+                                        encodeURIComponent((input || {}).id) +
+                                        "/legality",
+                                ),
+                            ),
+                    },
+                    {
+                        name: "get_keyword",
+                        title: "Explain a keyword",
+                        description:
+                            "Explain what a Flesh and Blood keyword means, e.g. Dominate, Go again, Arcane Barrier.",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                name: { type: "string", description: "Keyword name" },
+                            },
+                            required: ["name"],
+                        },
+                        annotations: { readOnlyHint: true },
+                        execute: async (input) =>
+                            result(
+                                await call(
+                                    "/v1/keywords/" +
+                                        encodeURIComponent((input || {}).name),
+                                ),
+                            ),
+                    },
+                ];
+
+                // The API is still moving. The W3C draft puts it on
+                // document.modelContext with registerTool(); Chrome's preview shipped
+                // navigator.modelContext with provideContext({tools}). Register on
+                // whichever surface this browser actually exposes.
+                const surfaces = new Set(
+                    [document.modelContext, navigator.modelContext].filter(Boolean),
+                );
+
+                for (const mc of surfaces) {
+                    try {
+                        if (typeof mc.registerTool === "function") {
+                            for (const tool of tools) {
+                                mc.registerTool(tool);
+                            }
+                        } else if (typeof mc.provideContext === "function") {
+                            mc.provideContext({ tools: tools });
+                        }
+                    } catch (err) {
+                        console.warn("WebMCP registration failed:", err);
+                    }
+                }
+            })();
+        </script>
     </body>
 </html>
