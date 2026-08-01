@@ -24,6 +24,9 @@ var landingPage []byte
 //go:embed landing.md
 var landingMarkdown []byte
 
+//go:embed auth.md
+var authMarkdown []byte
+
 //go:embed static/tailwind.min.css
 var tailwindCSS []byte
 
@@ -103,6 +106,7 @@ func NewRouter(ctx context.Context, store *data.Store, logger *slog.Logger, metr
 	// Agent discovery endpoints
 	mux.HandleFunc("GET /robots.txt", h.RobotsTxt)
 	mux.HandleFunc("GET /sitemap.xml", h.SitemapXML)
+	mux.HandleFunc("GET /auth.md", h.AuthMd)
 	mux.HandleFunc("GET /.well-known/api-catalog", h.APICatalog)
 	mux.HandleFunc("GET /.well-known/mcp/server-card.json", h.MCPServerCard)
 	mux.HandleFunc("GET /.well-known/agent-skills/index.json", h.AgentSkillsIndex)

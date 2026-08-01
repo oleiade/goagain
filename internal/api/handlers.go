@@ -112,6 +112,7 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 				"GET /":                       "Landing page (HTML) or API info (JSON with Accept: application/json)",
 				"GET /health":                 "Health check with stats",
 				"GET /docs":                   "Interactive API documentation (Swagger UI)",
+				"GET /auth.md":                "Authentication requirements (none; the API is public)",
 				"GET /openapi.yaml":           "OpenAPI 3.0 specification",
 				"GET /v1/cards":               "List/search cards (params: name, type, class, set, pitch, keyword, q, legal_in, limit, offset)",
 				"GET /v1/cards/{id}":          "Get card by unique_id or name",
@@ -344,6 +345,19 @@ func (h *Handler) RobotsTxt(w http.ResponseWriter, _ *http.Request) {
 		"Content-Signal: ai-train=yes, search=yes, ai-input=yes\n", h.apiBaseURL)
 }
 
+// AuthMd serves /auth.md, which documents that the API needs no credentials.
+// Saying so explicitly saves an agent from probing for an auth scheme, and is
+// the honest alternative to publishing OAuth metadata for endpoints that do not
+// exist.
+func (h *Handler) AuthMd(w http.ResponseWriter, _ *http.Request) {
+	md := string(authMarkdown)
+	md = strings.ReplaceAll(md, "https://api.goagain.dev", h.apiBaseURL)
+	md = strings.ReplaceAll(md, "https://mcp.goagain.dev", h.mcpBaseURL)
+
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	_, _ = w.Write([]byte(md))
+}
+
 // AgentSkillsIndex serves the agent skills discovery index.
 func (h *Handler) AgentSkillsIndex(w http.ResponseWriter, r *http.Request) {
 	index := map[string]any{
@@ -360,6 +374,12 @@ func (h *Handler) AgentSkillsIndex(w http.ResponseWriter, r *http.Request) {
 				"type":        "mcp-server-card",
 				"description": "MCP Server Card for agent tool discovery",
 				"url":         h.apiBaseURL + "/.well-known/mcp/server-card.json",
+			},
+			{
+				"name":        "auth-md",
+				"type":        "auth-md",
+				"description": "Authentication requirements: none, the API is public and anonymous",
+				"url":         h.apiBaseURL + "/auth.md",
 			},
 			{
 				"name":        "sitemap",

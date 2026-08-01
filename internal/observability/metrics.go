@@ -390,6 +390,7 @@ var staticRoutes = map[string]bool{
 	"/":                                    true,
 	"/robots.txt":                          true,
 	"/sitemap.xml":                         true,
+	"/auth.md":                             true,
 	"/.well-known/api-catalog":             true,
 	"/.well-known/mcp/server-card.json":    true,
 	"/.well-known/agent-skills/index.json": true,

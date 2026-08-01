@@ -77,6 +77,7 @@ Add to your Claude Desktop configuration:
 - [API Catalog](/.well-known/api-catalog) - RFC 9727 API discovery
 - [MCP Server Card](/.well-known/mcp/server-card.json) - MCP server metadata
 - [Agent Skills Index](/.well-known/agent-skills/index.json) - Skills discovery
+- [auth.md](/auth.md) - Authentication requirements (there are none)
 - [OpenAPI Spec](/openapi.yaml) - OpenAPI 3.0 specification
 - [Sitemap](/sitemap.xml) - XML sitemap
 - [Robots.txt](/robots.txt) - Crawler rules and content signals

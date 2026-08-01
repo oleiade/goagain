@@ -95,3 +95,33 @@ func TestRobotsTxt_AIRules(t *testing.T) {
 		t.Error("Content-Signal does not match the allow-everything policy")
 	}
 }
+
+// TestAuthMd covers the two things that make /auth.md useful: the H1 the
+// agent-readiness scanners key on, and base-URL substitution so a non-production
+// deployment does not document goagain.dev's endpoints as its own.
+func TestAuthMd(t *testing.T) {
+	h := newTestHandler(t)
+
+	w := httptest.NewRecorder()
+	h.AuthMd(w, httptest.NewRequest(http.MethodGet, "/auth.md", nil))
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/markdown") {
+		t.Errorf("Content-Type = %q, want text/markdown", ct)
+	}
+
+	body := w.Body.String()
+	if !strings.HasPrefix(body, "# auth.md\n") {
+		t.Errorf("must open with an H1 containing \"auth.md\"; got %.40q", body)
+	}
+	if strings.Contains(body, "https://api.goagain.dev") || strings.Contains(body, "https://mcp.goagain.dev") {
+		t.Error("hardcoded production URLs survived substitution")
+	}
+	for _, want := range []string{"http://api.test", "http://mcp.test"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("missing substituted base URL %q", want)
+		}
+	}
+}
