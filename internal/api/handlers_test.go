@@ -61,3 +61,37 @@ func TestListCards_LegalInValidation(t *testing.T) {
 		})
 	}
 }
+
+// TestRobotsTxt_AIRules guards the shape scanners and RFC 9309 parsers rely on:
+// every AI crawler needs its own group, and the file must contain real newlines.
+// Production once served the whole file as a single line with a literal "\n",
+// which silently voids every directive in it.
+func TestRobotsTxt_AIRules(t *testing.T) {
+	h := newTestHandler(t)
+
+	w := httptest.NewRecorder()
+	h.RobotsTxt(w, httptest.NewRequest(http.MethodGet, "/robots.txt", nil))
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	body := w.Body.String()
+
+	if strings.Contains(body, `\n`) {
+		t.Errorf("body contains a literal backslash-n, directives will not parse:\n%s", body)
+	}
+	if !strings.Contains(body, "User-agent: *\nAllow: /\n") {
+		t.Error("missing wildcard group")
+	}
+	for _, ua := range api.AICrawlers {
+		if !strings.Contains(body, "User-agent: "+ua+"\nAllow: /\n") {
+			t.Errorf("missing group for %q", ua)
+		}
+	}
+	if !strings.Contains(body, "Sitemap: http://api.test/sitemap.xml\n") {
+		t.Error("sitemap missing or not using the configured base URL")
+	}
+	if !strings.Contains(body, "Content-Signal: ai-train=yes, search=yes, ai-input=yes\n") {
+		t.Error("Content-Signal does not match the allow-everything policy")
+	}
+}

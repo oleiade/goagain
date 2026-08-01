@@ -297,40 +297,51 @@ func (h *Handler) ListAbilities(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, h.store.Abilities)
 }
 
+// AICrawlers are the AI crawler user-agent tokens given their own robots.txt
+// group. A wildcard group alone does not satisfy RFC 9309 clients that look for
+// a group naming them directly, nor the agent-readiness scanners that check for
+// these tokens verbatim.
+var AICrawlers = []string{
+	"GPTBot",
+	"OAI-SearchBot",
+	"ChatGPT-User",
+	"ClaudeBot",
+	"Claude-Web",
+	"Claude-User",
+	"Claude-SearchBot",
+	"anthropic-ai",
+	"Google-Extended",
+	"Applebot-Extended",
+	"Amazonbot",
+	"Bytespider",
+	"CCBot",
+	"PerplexityBot",
+	"meta-externalagent",
+}
+
 // RobotsTxt serves the robots.txt file with AI crawler rules and Content Signals.
-func (h *Handler) RobotsTxt(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RobotsTxt(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	_, _ = fmt.Fprintf(w, `# Robots.txt for goagain API
-# https://www.rfc-editor.org/rfc/rfc9309
 
-User-agent: *
-Allow: /
+	_, _ = fmt.Fprint(w, "# Robots.txt for goagain API\n"+
+		"# https://www.rfc-editor.org/rfc/rfc9309\n"+
+		"\n"+
+		"User-agent: *\n"+
+		"Allow: /\n"+
+		"\n"+
+		"# AI crawlers get explicit groups, all with full access. The card data is\n"+
+		"# derived from the public the-fab-cube/flesh-and-blood-cards dataset, so\n"+
+		"# there is nothing here to withhold from training or retrieval.\n")
 
-# AI crawlers: allow access, disallow training
-User-agent: GPTBot
-Allow: /
+	for _, ua := range AICrawlers {
+		_, _ = fmt.Fprintf(w, "\nUser-agent: %s\nAllow: /\n", ua)
+	}
 
-User-agent: OAI-SearchBot
-Allow: /
-
-User-agent: Claude-Web
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-User-agent: Google-Extended
-Disallow: /
-
-User-agent: CCBot
-Disallow: /
-
-Sitemap: %s/sitemap.xml
-
-# Content Signals (https://contentsignals.org/)
-# https://datatracker.ietf.org/doc/draft-romm-aipref-contentsignals/
-Content-Signal: ai-train=no, search=yes, ai-input=yes
-`, h.apiBaseURL)
+	_, _ = fmt.Fprintf(w, "\nSitemap: %s/sitemap.xml\n"+
+		"\n"+
+		"# Content Signals (https://contentsignals.org/)\n"+
+		"# https://datatracker.ietf.org/doc/draft-romm-aipref-contentsignals/\n"+
+		"Content-Signal: ai-train=yes, search=yes, ai-input=yes\n", h.apiBaseURL)
 }
 
 // AgentSkillsIndex serves the agent skills discovery index.
