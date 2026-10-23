@@ -294,9 +294,51 @@
     ]
   },
   {
+    "unique_id": "TMfcNJPJChPkFk7WWQFhD",
+    "id": "AMA",
+    "name": "Armory Deck - Malice",
+    "printings": [
+      {
+        "unique_id": "BmGtJQktNKT6nQpQmGpMf",
+        "edition": "N",
+        "start_card_id": "AMA001",
+        "end_card_id": "AMA030",
+        "initial_release_date": "2026-09-25T00:00:00Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/armory-deck-malice-domina-of-the-dead/",
+        "product_page": "https://fabtcg.com/products/product/armory-deck-malice/",
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://cdn.fabtcg.com/uploads/2026/07/armory_deck_malice.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "QtnqKj7m6zPFmkmwNQjQz",
+    "id": "AMO",
+    "name": "Armory Deck - Dr. Mortimer",
+    "printings": [
+      {
+        "unique_id": "RbMdRp8HMgGNRptCjHHwH",
+        "edition": "N",
+        "start_card_id": "AMO001",
+        "end_card_id": "AMO033",
+        "initial_release_date": "2026-11-14T00:00:00Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/armory-deck-dr-mortimer-blight-of-the-pits/",
+        "product_page": "https://fabtcg.com/products/armory-deck/armory-deck-mortimer/",
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://cdn.fabtcg.com/uploads/2026/08/armory_deck_mortimer.png"
+      }
+    ]
+  },
+  {
     "unique_id": "BrRjNCgcqCj7TrJPbrmKk",
     "id": "AMX",
-    "name": "Amory Deck - Maxx",
+    "name": "Armory Deck - Maxx",
     "printings": [
       {
         "unique_id": "Jnr9G9CbTNdtFCc9JdJKG",
@@ -344,7 +386,7 @@
         "unique_id": "GkB7DB6tf6tKWnMdLNLzJ",
         "edition": "N",
         "start_card_id": "AOL001",
-        "end_card_id": "AOL026",
+        "end_card_id": "AOL028",
         "initial_release_date": "2026-08-07T00:00:00.000Z",
         "out_of_print": false,
         "card_database": null,
@@ -841,7 +883,7 @@
         "unique_id": "QcdhjPdnQr9HdMrt7fg7k",
         "edition": "N",
         "start_card_id": "CON001",
-        "end_card_id": "CON004",
+        "end_card_id": "CON008",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -1262,7 +1304,7 @@
   {
     "unique_id": "qJrJThgkdr8NzCz8C8hLM",
     "id": "IAR",
-    "name": "??? Set 20 ???",
+    "name": "Usurp the Shadow Throne",
     "printings": [
       {
         "unique_id": "qPHBhhWF8Mb8pfGcmztnF",
@@ -1310,7 +1352,7 @@
         "unique_id": "hqBm7CnKjCWzKBQcph89t",
         "edition": "N",
         "start_card_id": "JDG000",
-        "end_card_id": "JDG062",
+        "end_card_id": "JDG067",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -1457,7 +1499,7 @@
         "unique_id": "B8Nwc79RrDqgRrqPCczFb",
         "edition": "N",
         "start_card_id": "LSS001",
-        "end_card_id": "LSS023",
+        "end_card_id": "LSS024",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -1522,6 +1564,27 @@
         "card_gallery": "https://fabtcg.com/resources/card-galleries/monarch-booster-unlimited/",
         "release_notes": "https://fabtcg.com/en/resources/rules-and-policy-center/release-notes/monarch/",
         "set_logo": "https://dhhim4ltzu1pj.cloudfront.net/media/images/0zIUv0bFVWaD.original.png"
+      }
+    ]
+  },
+  {
+    "unique_id": "LdTHMcncJ8HBWcjjLHDWM",
+    "id": "MPA",
+    "name": "Mastery Pack Assassin",
+    "printings": [
+      {
+        "unique_id": "9QCqJLP8C9fHH98qGGRPr",
+        "edition": "N",
+        "start_card_id": "MPA001",
+        "end_card_id": "MPA026",
+        "initial_release_date": "2026-11-14T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/mastery-pack-assassin",
+        "product_page": "https://fabtcg.com/products/booster-set/mastery-pack-assassin/",
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": "https://cdn.fabtcg.com/uploads/2026/07/mastery_pack_assassin_logo.png"
       }
     ]
   },
@@ -2219,6 +2282,27 @@
     ]
   },
   {
+    "unique_id": "tq7bnHfwnHrdwwgJ8fCtb",
+    "id": "SPW",
+    "name": "Smash Palace - Chorus of Steel",
+    "printings": [
+      {
+        "unique_id": "N9GCTHwD6CDh9HrFHDfnM",
+        "edition": "N",
+        "start_card_id": "SPW001",
+        "end_card_id": "SPW004",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
     "unique_id": "HwFzNL9HbGLbfB8TjDrBF",
     "id": "SUP",
     "name": "Super Slam",
@@ -2332,7 +2416,7 @@
         "unique_id": "9qTTzdG9cWdHPjN86TWJ7",
         "edition": "N",
         "start_card_id": "TNP001",
-        "end_card_id": "TNP030",
+        "end_card_id": "TNP060",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -2437,7 +2521,7 @@
         "unique_id": "LWc9gCNhcGWHCP6KcGzbj",
         "edition": "N",
         "start_card_id": "WIN001",
-        "end_card_id": "WIN045",
+        "end_card_id": "WIN053",
         "initial_release_date": null,
         "out_of_print": false,
         "card_database": null,
@@ -2542,6 +2626,132 @@
         "product_page": "https://fabtcg.com/products/booster-set/part-the-mistveil-blitz-deck-collection-en/",
         "collectors_center": "https://fabtcg.com/en/collectors-centre/part-the-mistveil/",
         "card_gallery": "https://fabtcg.com/resources/card-galleries/part-the-mistveil-collection-box/",
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "BfWJdRDJphgPthNdwMLfR",
+    "id": "AMG",
+    "name": "Armory Deck - Min, Genius",
+    "printings": [
+      {
+        "unique_id": "8kWtQKNbFMWHW6WTRjzH8",
+        "edition": "N",
+        "start_card_id": "AMG001",
+        "end_card_id": "AMG027",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/armory-deck-min-genius/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "TfnH9nnfzWNWFrMm7gWrG",
+    "id": "OBK",
+    "name": "Outbreak",
+    "printings": [
+      {
+        "unique_id": "FLQJgTM8mbQjhmJf7qRCq",
+        "edition": "N",
+        "start_card_id": "OBK000",
+        "end_card_id": "OBK256",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/outbreak/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "GT8wCzqPQ6LNH6HL9w8W7",
+    "id": "SAT",
+    "name": "Silver Age - Prism, Advent of Thrones",
+    "printings": [
+      {
+        "unique_id": "QjjdJBfBGDWtt6pDRtntW",
+        "edition": "N",
+        "start_card_id": "SAT001",
+        "end_card_id": "SAT033",
+        "initial_release_date": "2026-09-18T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-prism-advent-of-thrones/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "HMdDRhFdqPrMmNdJFthRn",
+    "id": "SBW",
+    "name": "Silver Age - Viserai, Between Worlds",
+    "printings": [
+      {
+        "unique_id": "zFtwBdKQRKpq9wngkcDFj",
+        "edition": "N",
+        "start_card_id": "SBW001",
+        "end_card_id": "SBW035",
+        "initial_release_date": "2026-09-18T00:00:00.000Z",
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-viserai-between-worlds/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "kG7bMg9fHQTqdzbwrBLr8",
+    "id": "SFC",
+    "name": "Silver Age - α-01, First Cogwarden",
+    "printings": [
+      {
+        "unique_id": "nFkWMpWqwB8rppQNF7QGd",
+        "edition": "N",
+        "start_card_id": "SFC001",
+        "end_card_id": "SFC001",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": "https://cardvault.fabtcg.com/products/silver-age-alpha-01-first-cogwarden/",
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
+        "release_notes": null,
+        "set_logo": null
+      }
+    ]
+  },
+  {
+    "unique_id": "tRfHzLzjCGC6pbRwm78Lm",
+    "id": "SLV",
+    "name": "Silver Age - Mortimer, Living Virus",
+    "printings": [
+      {
+        "unique_id": "P6wF7qPd9tkFrNKT6zLhg",
+        "edition": "N",
+        "start_card_id": "SLV001",
+        "end_card_id": "SLV036",
+        "initial_release_date": null,
+        "out_of_print": false,
+        "card_database": null,
+        "product_page": null,
+        "collectors_center": null,
+        "card_gallery": null,
         "release_notes": null,
         "set_logo": null
       }
