@@ -83,6 +83,10 @@ jobs:
         run: go build -o goagain-api ./cmd/api
 
       - name: Start API server
+        # All k6 VUs share one source IP; lift the per-IP limiter so the test
+        # measures the API rather than the rate limiter.
+        env:
+          RATE_LIMIT_RPS: "100000"
         run: |
           ./goagain-api &
           echo "Waiting for API server to start..."
@@ -126,6 +130,10 @@ jobs:
         run: go build -o goagain-api ./cmd/api
 
       - name: Start API server
+        # All k6 VUs share one source IP; lift the per-IP limiter so the test
+        # measures the API rather than the rate limiter.
+        env:
+          RATE_LIMIT_RPS: "100000"
         run: |
           ./goagain-api &
           echo "Waiting for API server to start..."
