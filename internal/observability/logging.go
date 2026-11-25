@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
-	"go.opentelemetry.io/otel/log/global"
+	"go.opentelemetry.io/otel"
 )
 
 // SetupLogger configures the global slog logger based on the provided config.
@@ -44,7 +44,7 @@ func SetupLogger(config Config) *slog.Logger {
 
 	// Create OTel handler that bridges to OTel log provider
 	otelHandler := otelslog.NewHandler(config.ServiceName,
-		otelslog.WithLoggerProvider(global.GetLoggerProvider()),
+		otelslog.WithLoggerProvider(otel.GetLoggerProvider()),
 	)
 
 	// Combine handlers: logs go to both stdout and OTel

@@ -661,7 +661,7 @@ function testRobotsTxt() {
         r.body.includes("Sitemap:") && r.body.includes("/sitemap.xml"),
       "robots.txt has Content-Signal directive": (r) =>
         r.body.includes("Content-Signal:") &&
-        r.body.includes("ai-train=no") &&
+        r.body.includes("ai-train=yes") &&
         r.body.includes("search=yes") &&
         r.body.includes("ai-input=yes"),
     });
